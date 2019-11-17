@@ -6,6 +6,7 @@ import com.zzh.util.SpringBeanFactory;
 import org.I0Itec.zkclient.ZkClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.net.InetAddress;
 
 
@@ -21,7 +22,7 @@ public class ZkServiceRegistry implements ServiceRegistry, Runnable
     public ZkServiceRegistry ()
     {
         serverConfig = SpringBeanFactory.getBean(ServerConfig.class);
-        zkClient = new ZkClient(serverConfig.getZkAddress(), serverConfig.getSessionTimeout(), serverConfig.getConnectionTimeout());
+        zkClient = SpringBeanFactory.getBean(ZkClient.class);
         logger.info("connect to zookeeper");
     }
 
@@ -37,11 +38,12 @@ public class ZkServiceRegistry implements ServiceRegistry, Runnable
                 logger.debug("create registry node: {}", rootPath);
             }
 
+            // 192.168.64.81:8899:8081
             String ip = InetAddress.getLocalHost().getHostAddress();
             String servicePath = rootPath + "/ip-" + ip + ":" + serverConfig.getServerPort() + ":" + serverConfig.getWebPort();
             if(!zkClient.exists(servicePath))
             {
-                zkClient.createPersistent(servicePath);
+                zkClient.createEphemeral(servicePath);
                 logger.info("注册 zookeeper 成功，msg=[{}]", servicePath);
             }
         } catch (Exception e)
@@ -53,6 +55,8 @@ public class ZkServiceRegistry implements ServiceRegistry, Runnable
     @Override
     public void run ()
     {
+        logger.info("begin registry");
         register();
+        logger.info("registry success");
     }
 }
