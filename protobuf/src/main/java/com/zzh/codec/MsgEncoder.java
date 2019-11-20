@@ -19,11 +19,12 @@ public class MsgEncoder extends MessageToByteEncoder<Message>
     {
         try
         {
+
             byte[] bytes = msg.toByteArray();
             int code = MsgTypeEnum.getByClass(msg.getClass()).getCode();
             int length = bytes.length;
 
-            ByteBuf buf = Unpooled.buffer(8 + length);
+            ByteBuf buf = ctx.alloc().ioBuffer(8 + length);
             buf.writeInt(length);
             buf.writeInt(code);
             buf.writeBytes(bytes);

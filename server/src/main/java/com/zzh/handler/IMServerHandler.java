@@ -14,8 +14,8 @@ public class IMServerHandler extends SimpleChannelInboundHandler<Message>
     private static final Logger logger = LoggerFactory.getLogger(IMServerHandler.class);
 
     @Override
-    protected void channelRead0 (ChannelHandlerContext channelHandlerContext, Message message) throws Exception
+    protected void channelRead0 (ChannelHandlerContext ctx, Message msg) throws Exception
     {
-
+        logger.info(msg.toString());
     }
 }

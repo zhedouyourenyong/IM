@@ -26,7 +26,7 @@ public class ParseService
     }
 
 
-    public Message getMsgByCode (int code, byte[] bytes) throws InvalidProtocolBufferException,Exception
+    public Message getMsgByCode (int code, byte[] bytes) throws InvalidProtocolBufferException, Exception
     {
         MsgTypeEnum msgType = MsgTypeEnum.getByCode(code);
         Parse parseFunction = parseFunctionMap.get(msgType);

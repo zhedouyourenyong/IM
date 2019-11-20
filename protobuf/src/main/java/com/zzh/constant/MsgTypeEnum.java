@@ -3,6 +3,7 @@ package com.zzh.constant;
 import com.zzh.protobuf.Ack;
 import com.zzh.protobuf.Chat;
 import com.zzh.protobuf.Internal;
+
 import java.util.stream.Stream;
 
 public enum MsgTypeEnum
@@ -34,14 +35,26 @@ public enum MsgTypeEnum
 
     public static MsgTypeEnum getByCode (int code)
     {
-        return Stream.of(values()).filter(t -> t.code == code)
-                .findFirst().orElseThrow(IllegalArgumentException::new);
+        for (MsgTypeEnum typeEnum : values())
+        {
+            if(typeEnum.getCode() == code)
+            {
+                return typeEnum;
+            }
+        }
+        throw new IllegalArgumentException("ResultInfo StatusEnum not legal:" + code);
     }
 
     public static MsgTypeEnum getByClass (Class<?> clazz)
     {
-        return Stream.of(values()).filter(t -> t.clazz == clazz)
-                .findFirst().orElseThrow(IllegalArgumentException::new);
+        for (MsgTypeEnum typeEnum : values())
+        {
+            if(typeEnum.getClass() == clazz)
+            {
+                return typeEnum;
+            }
+        }
+        throw new IllegalArgumentException("ResultInfo StatusEnum not legal:" + clazz.getName());
     }
 
     public int getCode ()

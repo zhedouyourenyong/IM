@@ -51,8 +51,7 @@ public class MsgDecoder extends ByteToMessageDecoder
         }
 
         int code = in.readInt();
-        ByteBuf byteBuf = Unpooled.buffer(length);
-
+        ByteBuf byteBuf = ctx.alloc().heapBuffer(length);
         in.readBytes(byteBuf);
 
         byte[] body = byteBuf.array();
