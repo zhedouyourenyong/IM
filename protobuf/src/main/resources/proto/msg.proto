@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package com.zzh.protobuf;
+option java_outer_classname = "Msg";
+
+message Protocol {
+
+    //消息头
+    Head msgHead = 1;
+
+    //消息体，json，格式由消息类型决定
+    string msgBody = 2;
+
+    //扩展字段
+    string addition = 3;
+}
+
+message Head {
+    //协议版本号。第一版本：1，以此类推。
+    int32 version = 1;
+
+    //消息唯一id
+    int64 msgId = 2;
+
+    //发送者module
+    Module fromModule = 3;
+
+    //发送者userId
+    string fromId = 4;
+
+    //接收者module
+    Module destModule = 5;
+
+    //接收者userId
+    string destId = 6;
+
+    //发送时间
+    int64 timeStamp = 7;
+
+    //消息类型
+    MsgType msgType = 8;
+}
+
+
+enum Module {
+    CLIENT = 0;
+    SERVER = 1;
+}
+
+
+enum MsgType {
+    SINGLE = 0; //私聊消息
+    GROUP = 2; //群聊消息
+
+    GREET = 3; //登录问候
+    ACK = 4; //ack
+    ERROR = 5; //错误
+    HEART = 6; //心跳
+}

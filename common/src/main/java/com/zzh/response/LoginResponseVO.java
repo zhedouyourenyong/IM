@@ -1,5 +1,6 @@
 package com.zzh.response;
 
+import com.zzh.pojo.RouteInfo;
 import lombok.Data;
 
 /**
@@ -14,5 +15,5 @@ public class LoginResponseVO
     private String code;
     private String message;
     private Object reqNO;
-    private ServerInfo serverInfo;
+    private RouteInfo routeInfo;
 }

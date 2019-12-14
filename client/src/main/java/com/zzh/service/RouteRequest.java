@@ -1,9 +1,9 @@
 package com.zzh.service;
 
 import com.zzh.request.LoginRequestVO;
-import com.zzh.response.ServerInfo;
+import com.zzh.pojo.RouteInfo;
 
 public interface RouteRequest
 {
-    ServerInfo getIMServer (LoginRequestVO loginRequestVO) throws Exception;
+    RouteInfo getIMServer (LoginRequestVO loginRequestVO) throws Exception;
 }

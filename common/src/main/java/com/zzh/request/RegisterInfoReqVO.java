@@ -7,6 +7,6 @@ import lombok.Data;
 @Data
 public class RegisterInfoReqVO extends BaseRequest
 {
-
     private String userName;
+    private String password;
 }

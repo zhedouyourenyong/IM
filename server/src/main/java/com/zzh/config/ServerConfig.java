@@ -36,4 +36,10 @@ public class ServerConfig
     @Value("${zk.registry.root}")
     private String registryRootPath;
 
+    @Value("${im.heartbeat.time}")
+    private int heartTime;
+
+    @Value("${im.clear.route.request.url}")
+    private String offLineURL;
+
 }

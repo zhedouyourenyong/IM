@@ -1,7 +1,7 @@
 package com.zzh;
 
-import com.zzh.request.LoginRequestVO;
-import com.zzh.service.RouteRequest;
+
+import com.zzh.client.IMClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +16,7 @@ public class ClientApplication implements CommandLineRunner
     private final static Logger logger = LoggerFactory.getLogger(ClientApplication.class);
 
     @Autowired
-    RouteRequest routeRequest;
+    IMClient client;
 
     public static void main (String[] args)
     {
@@ -27,8 +27,6 @@ public class ClientApplication implements CommandLineRunner
     @Override
     public void run (String... args) throws Exception
     {
-        LoginRequestVO loginRequestVO = new LoginRequestVO(123L, "zzh");
-        String str = routeRequest.getIMServer(loginRequestVO).toString();
-        System.out.println(str);
+        client.start();
     }
 }

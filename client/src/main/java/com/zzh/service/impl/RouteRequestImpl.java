@@ -7,7 +7,7 @@ import com.zzh.enums.StatusEnum;
 import com.zzh.service.RouteRequest;
 import com.zzh.request.LoginRequestVO;
 import com.zzh.response.LoginResponseVO;
-import com.zzh.response.ServerInfo;
+import com.zzh.pojo.RouteInfo;
 import okhttp3.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -25,7 +25,7 @@ public class RouteRequestImpl implements RouteRequest
     AppConfig appConfig;
 
     @Override
-    public ServerInfo getIMServer (LoginRequestVO loginRequestVO) throws Exception
+    public RouteInfo getIMServer (LoginRequestVO loginRequestVO) throws Exception
     {
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("userId", loginRequestVO.getUserId());
@@ -58,6 +58,6 @@ public class RouteRequestImpl implements RouteRequest
         {
             responseBody.close();
         }
-        return responseVO.getServerInfo();
+        return responseVO.getRouteInfo();
     }
 }

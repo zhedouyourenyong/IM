@@ -1,8 +1,9 @@
 package com.zzh;
 
-import com.zzh.registry.impl.ZkServiceRegistry;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,20 +14,19 @@ public class IMServerApplication implements CommandLineRunner
 {
     private final static Logger logger = LoggerFactory.getLogger(IMServerApplication.class);
 
+    @Autowired
+    private ServerStarter serverStarter;
+
 
     public static void main (String[] args)
     {
         SpringApplication.run(IMServerApplication.class, args);
     }
 
-    /*
-      将本机 ip+port注册到Zookeeper
-     */
+
     @Override
-    public void run (String... args) throws Exception
+    public void run (String... args)
     {
-        Thread thread = new Thread(new ZkServiceRegistry());
-        thread.setName("zk-registry");
-        thread.start();
+        serverStarter.start();
     }
 }

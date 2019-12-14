@@ -6,5 +6,5 @@ import lombok.Data;
 @Data
 public class OffLineReqVO extends BaseRequest
 {
-    private Long userId;
+    private String userId;
 }

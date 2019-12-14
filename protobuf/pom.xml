@@ -17,12 +17,6 @@
             <artifactId>protobuf-java</artifactId>
             <version>3.5.1</version>
         </dependency>
-        <dependency>
-            <groupId>com.zzh</groupId>
-            <artifactId>common</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -36,15 +30,14 @@
                     <protoSourceRoot>${project.basedir}/src/main/resources/proto</protoSourceRoot>
                     <outputDirectory>${project.basedir}/src/main/java</outputDirectory>
                     <clearOutputDirectory>false</clearOutputDirectory>
-                    <temporaryProtoFileDirectory>${project.build.directory}/protoc-dependencies
-                    </temporaryProtoFileDirectory>
-                    <!--配置查看https://www.xolstice.org/protobuf-maven-plugin/compile-mojo.html-->
+                    <temporaryProtoFileDirectory>${project.build.directory}/protoc-dependencies</temporaryProtoFileDirectory>
+                    <protocExecutable>I:\protocol\bin\protoc</protocExecutable>
                 </configuration>
                 <executions>
                     <execution>
-                        <!--<goals>-->
-                        <!--<goal>compile</goal>-->
-                        <!--</goals>-->
+<!--                        <goals>-->
+<!--                        <goal>compile</goal>-->
+<!--                        </goals>-->
                     </execution>
                 </executions>
             </plugin>

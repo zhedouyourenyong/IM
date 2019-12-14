@@ -1,14 +1,20 @@
 package com.zzh.controller;
 
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import com.zzh.algorithm.RouteHandle;
-import com.zzh.cache.ServerListCache;
+import com.zzh.constant.Constant;
 import com.zzh.enums.StatusEnum;
-import com.zzh.pojo.UserInfo;
+import com.zzh.pojo.RouteInfo;
+import com.zzh.pojo.User;
+import com.zzh.discovery.impl.ZKServerAddressListener;
 import com.zzh.request.LoginRequestVO;
+import com.zzh.request.LoginStatusRequest;
 import com.zzh.response.*;
 import com.zzh.service.AccountService;
-import com.zzh.service.UserInfoCacheService;
+import com.zzh.service.RouteInfoService;
+import com.zzh.service.UserInfoService;
 import com.zzh.request.OffLineReqVO;
 import com.zzh.request.RegisterInfoReqVO;
 import org.slf4j.Logger;
@@ -21,7 +27,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import javax.annotation.Resource;
-import java.util.Map;
 
 
 @Controller("/")
@@ -30,56 +35,69 @@ public class AccountController
     private static final Logger logger = LoggerFactory.getLogger(AccountController.class);
 
     @Resource(name = "LoopHandle")
-    RouteHandle routeHandle;
+    private RouteHandle routeHandle;
     @Autowired
-    ServerListCache cache;
+    private ZKServerAddressListener serverAddressListener;
     @Autowired
-    AccountService accountService;
+    private AccountService accountService;
     @Autowired
-    UserInfoCacheService userInfoCacheService;
+    private RouteInfoService routeInfoService;
+    @Autowired
+    private UserInfoService userInfoService;
 
 
     @RequestMapping(value = "login", method = RequestMethod.POST)
     @ResponseBody
-    public LoginResponseVO login (@RequestBody LoginRequestVO loginReqVO) throws Exception
+    public LoginResponseVO login(@RequestBody LoginRequestVO loginReqVO) throws Exception
     {
+        logger.info(loginReqVO.toString());
         LoginResponseVO result = new LoginResponseVO();
-
-        StatusEnum status = accountService.login(loginReqVO);
-        result.setCode(status.getCode());
-        result.setMessage(status.getMessage());
-
-        if(status == StatusEnum.SUCCESS)
+        try
         {
-            String address = routeHandle.routeServer(cache.getAll(), String.valueOf(loginReqVO.getUserId()));
-            String[] tmp = address.split(":");
+            JSONObject status = accountService.login(loginReqVO.getUserName(), loginReqVO.getPassword());
+            result.setCode(status.getString(Constant.STATUS));
+            result.setMessage(status.getString(Constant.MESSAGE));
 
-            ServerInfo serverInfo = new ServerInfo();
-            serverInfo.setIp(tmp[0]);
-            serverInfo.setServerPort(tmp[1]);
-            serverInfo.setHttpPort(tmp[2]);
+            if (status.getInteger(Constant.STATUS) == 0)
+            {
+                /**
+                 * 192.168.64.81:8899:8081
+                 */
+                String address = routeHandle.routeServer(serverAddressListener.getAll(), loginReqVO.getUserId());
+                String[] tmp = address.split(":");
 
-            result.setServerInfo(serverInfo);
+                RouteInfo routeInfo = new RouteInfo();
+                routeInfo.setIp(tmp[0]);
+                routeInfo.setServerPort(tmp[1]);
+                routeInfo.setHttpPort(tmp[2]);
 
-            //保存路由信息
-            accountService.saveRouteInfo(loginReqVO, address);
+                String addressJson = JSON.toJSONString(routeInfo);
+                result.setRouteInfo(routeInfo);
+
+                //保存路由信息
+                routeInfoService.saveRouteInfo(status.getString(Constant.USER_ID), addressJson);
+            }
+        } catch (Exception e)
+        {
+            logger.error(e.getMessage(), e);
         }
+
         return result;
     }
 
     @RequestMapping(value = "registerAccount", method = RequestMethod.POST)
     @ResponseBody()
-    public BaseResponse<RegisterInfoRespVO> registerAccount (@RequestBody RegisterInfoReqVO registerInfo) throws Exception
+    public BaseResponse<RegisterInfoRespVO> registerAccount(@RequestBody RegisterInfoReqVO registerInfo) throws Exception
     {
         BaseResponse<RegisterInfoRespVO> result = new BaseResponse<>();
 
-        Map<String, Object> info = accountService.register(registerInfo);
-        StatusEnum status = (StatusEnum) info.get("status");
+        JSONObject info = accountService.register(registerInfo.getUserName(), registerInfo.getPassword());
+        StatusEnum status = (StatusEnum) info.get(Constant.STATUS);
 
         result.setCode(status.getCode());
         result.setMessage(status.getMessage());
 
-        if(status == StatusEnum.SUCCESS)
+        if (status == StatusEnum.SUCCESS)
         {
             RegisterInfoRespVO resp = new RegisterInfoRespVO((Long) info.get("userId"), registerInfo.getUserName());
             result.setDataBody(resp);
@@ -89,17 +107,37 @@ public class AccountController
 
     @RequestMapping(value = "offLine", method = RequestMethod.POST)
     @ResponseBody()
-    public BaseResponse<NULLBody> offLine (@RequestBody OffLineReqVO reqVO) throws Exception
+    public BaseResponse<NULLBody> offLine(@RequestBody OffLineReqVO reqVO) throws Exception
     {
         BaseResponse<NULLBody> res = new BaseResponse();
 
-        UserInfo cimUserInfo = userInfoCacheService.loadUserInfoByUserId(reqVO.getUserId());
+        User user = userInfoService.getUserInfoByUserId(reqVO.getUserId());
 
-        logger.info("下线用户[{}]", cimUserInfo.toString());
+        logger.info("下线用户[{}]", user.toString());
         accountService.offLine(reqVO.getUserId());
 
         res.setCode(StatusEnum.SUCCESS.getCode());
         res.setMessage(StatusEnum.SUCCESS.getMessage());
         return res;
+    }
+
+    @RequestMapping(value = "checkUserLoginStatus", method = RequestMethod.POST)
+    @ResponseBody
+    public BaseResponse<LoginStatusResponse> checkUserLoginStatus(@RequestBody LoginStatusRequest msg)
+    {
+        logger.info("check user{} status", msg.getUserId());
+
+        BaseResponse<LoginStatusResponse> resp = new BaseResponse<>();
+        LoginStatusResponse loginStatusResponse = new LoginStatusResponse();
+        resp.setDataBody(loginStatusResponse);
+        User userInfo = userInfoService.getUserInfoByUserId(msg.getUserId());
+        if (userInfo == null)
+        {
+            loginStatusResponse.setLoginStatus(false);
+        } else
+        {
+            loginStatusResponse.setLoginStatus(true);
+        }
+        return resp;
     }
 }
