@@ -5,12 +5,11 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.zzh.algorithm.RouteHandle;
 import com.zzh.constant.Constant;
-import com.zzh.discovery.impl.ZKServerAddressListener;
+import com.zzh.registery.impl.ZKServerAddressListener;
 import com.zzh.enums.StatusEnum;
 import com.zzh.pojo.RouteInfo;
 import com.zzh.pojo.User;
 import com.zzh.request.LoginRequestVO;
-import com.zzh.request.LoginStatusRequest;
 import com.zzh.request.OffLineReqVO;
 import com.zzh.request.RegisterInfoReqVO;
 import com.zzh.response.*;
@@ -105,6 +104,12 @@ public class AccountController
         return result;
     }
 
+    /**
+     * 由server调用
+     * @param reqVO
+     * @return
+     * @throws Exception
+     */
     @RequestMapping(value = "offLine", method = RequestMethod.POST)
     @ResponseBody()
     public BaseResponse<NULLBody> offLine(@RequestBody OffLineReqVO reqVO) throws Exception

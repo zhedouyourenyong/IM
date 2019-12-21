@@ -1,78 +1,150 @@
 package com.zzh.service;
 
+
 import com.alibaba.fastjson.JSONObject;
+import com.google.protobuf.Message;
+import com.zzh.client.handler.ServerTransferHandler;
+import com.zzh.domain.ClientConnection;
+import com.zzh.domain.ClientConnectionContext;
 import com.zzh.protobuf.Msg;
-import com.zzh.util.ClientChannelContext;
+import com.zzh.util.IdUtil;
 import com.zzh.util.NettyAttrUtil;
-import io.netty.channel.Channel;
-import io.netty.channel.socket.nio.NioSocketChannel;
-import okhttp3.OkHttpClient;
+import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.function.Function;
 
+/**
+ * 负责server与transfer之间的联系
+ */
 @Service
 public class MsgTransferHandler
 {
     private static final Logger logger = LoggerFactory.getLogger(MsgTransferHandler.class);
 
     @Autowired
-    OkHttpClient httpClient;
+    private ClientConnectionContext clientConnectionContext;
 
 
     /**
-     * 负责消息的实际发送工作
-     * 目标连接在本机和不在本机写成两个方法
-     *分布式通信，看极客时间里和分布式相关的课程，使用消息队列或RPC进行通信。
+     * 使用这个方法需要确认目标channel一定在本服务器，一般由server受到transfer的消息时使用。
+     *
      * @param msg
-     * @param channel
      */
-    public void sendSingleMsg(Msg.Protocol msg, Channel channel)
+    public void sendMsgToClient(Msg.Protocol msg)
     {
-        Long fromId = Long.parseLong(msg.getMsgHead().getFromId());
-        Long destId = Long.parseLong(msg.getMsgHead().getDestId());
-        Channel destChannel = ClientChannelContext.get(destId);
-        ServerAckWindow serverAckWindow = NettyAttrUtil.getServerAckWindow(channel);
+        ClientConnection conn = clientConnectionContext.getClientConnectionByUserId(msg.getMsgHead().getDestId());
+        if (conn == null)
+        {
+            logger.error("[send chat to client] not one the machine, userId: {}, connectorId: {}",
+                    msg.getMsgHead().getDestId(), ServerTransferHandler.CONNECTOR_ID);
+            return;
+        }
+        //change msg id
+        Msg.Head head = Msg.Head.newBuilder().mergeFrom(msg.getMsgHead()).setMsgId(IdUtil.nextId(conn.getNetId())).build();
+        Msg.Protocol copy = Msg.Protocol.newBuilder().mergeFrom(msg)
+                .setMsgHead(head).build();
+
+        conn.getCtx().writeAndFlush(copy);
+
+        //send delivered
+        sendMsg(msg.getMsgHead().getFromId(), msg.getMsgHead().getMsgId(), cid -> getDelivered(cid, msg));
+    }
+
+
+    public void sendMsgToClientOrTransfer(Msg.Protocol msg)
+    {
+        boolean onTheMachine = sendMsg(msg.getMsgHead().getDestId(), msg.getMsgHead().getMsgId(), cid -> {
+            Msg.Head head = Msg.Head.newBuilder().mergeFrom(msg.getMsgHead()).setMsgId(IdUtil.nextId(cid)).build();
+            return Msg.Protocol.newBuilder().mergeFrom(msg).setMsgHead(head).build();
+        });
 
         /**
-         * 目标连接在本机器
+         * send ack to from id
          */
-        if (destChannel != null)
+        if (onTheMachine)
         {
-            if (destChannel.isActive() && destChannel.isWritable())
+            ClientConnection conn = clientConnectionContext.getClientConnectionByUserId(msg.getMsgHead().getFromId());
+            if (conn == null)
             {
-                destChannel.writeAndFlush(msg).addListener(future -> {
-                    if (future.isCancelled())
-                    {
-                        logger.warn("future has been cancelled. {}, channel: {}", msg.getMsgBody().toString(), destChannel);
-                    } else if (future.isSuccess())
-                    {
-                        serverAckWindow.addMsgToAckWindow(destChannel, msg);
-                        logger.warn("future has been successfully pushed. {}, channel: {}", msg.getMsgBody().toString(), destChannel);
-                    } else
-                    {
-                        logger.error("message write fail, {}, channel: {}", msg.getMsgBody().toString(), destChannel, future.cause());
-                    }
-                });
+                ChannelHandlerContext ctx = ServerTransferHandler.getOneOfTransferCtx(System.currentTimeMillis());
+                ctx.writeAndFlush(getDelivered(ctx.channel().attr(NettyAttrUtil.NET_ID).get(), msg));
+            } else
+            {
+                Msg.Protocol delivered = getDelivered(conn.getNetId(), msg);
+                ServerAckWindow.offer(Long.valueOf(conn.getUserId()), delivered.getMsgHead().getMsgId(), delivered, m -> conn.getCtx().writeAndFlush(m));
             }
-        } else
-        {
-            //todo 通过路由层获取目标channel所在机器的ip+port，然后跨机器通信
-            //怎么搞ack，，，rpc方式吗
-
         }
     }
 
-    private JSONObject getDestChannelAddress(Long userId)
+    public void doSendAckToClient(Msg.Protocol ackMsg)
     {
-        JSONObject address=new JSONObject();
-        return address;
+        ClientConnection conn = clientConnectionContext.getClientConnectionByUserId(ackMsg.getMsgHead().getDestId());
+        if (conn == null)
+        {
+            logger.error("[send msg to client] not one the machine, userId: {}, connectorId: {}",
+                    ackMsg.getMsgHead().getDestId(), ServerTransferHandler.CONNECTOR_ID);
+            return;
+        }
+        Msg.Head copyHead = Msg.Head.newBuilder().mergeFrom(ackMsg.getMsgHead()).setMsgId(IdUtil.nextId(conn.getNetId())).build();
+
+        Msg.Protocol copy = Msg.Protocol.newBuilder().mergeFrom(ackMsg)
+                .setMsgHead(copyHead)
+                .build();
+        conn.getCtx().writeAndFlush(copy);
     }
 
-    public void sendGroupMsg(Msg.Protocol msg)
-    {
 
+    public void doSendAckToClientOrTransfer(Msg.Protocol ackMsg)
+    {
+        sendMsg(ackMsg.getMsgHead().getDestId(), ackMsg.getMsgHead().getMsgId(),
+                netId -> {
+                    Msg.Head copyHead = Msg.Head.newBuilder().mergeFrom(ackMsg.getMsgHead())
+                            .setMsgId(IdUtil.nextId(netId))
+                            .build();
+                    return Msg.Protocol.newBuilder().mergeFrom(ackMsg).setMsgHead(copyHead).build();
+                });
+    }
+
+    private Msg.Protocol getDelivered(Long connectionId, Msg.Protocol msg)
+    {
+        Msg.Head head = Msg.Head.newBuilder()
+                .setVersion(1)
+                .setMsgId(IdUtil.nextId(connectionId))
+                .setMsgType(Msg.MsgType.ACK)
+                .setFromId(msg.getMsgHead().getFromId())
+                .setDestId(msg.getMsgHead().getDestId())
+                .setTimeStamp(System.currentTimeMillis())
+                .build();
+
+        JSONObject ackId = new JSONObject();
+        ackId.put("ackId", msg.getMsgHead().getMsgId());
+
+        return Msg.Protocol.newBuilder()
+                .setMsgHead(head)
+                .setMsgBody(ackId.toString())
+                .build();
+    }
+
+
+    private boolean sendMsg(String destUserId, Long msgId, Function<Long, Message> generateMsg)
+    {
+        ClientConnection destClientConn = clientConnectionContext.getClientConnectionByUserId(destUserId);
+        if (destClientConn == null)
+        {
+            ChannelHandlerContext ctx = ServerTransferHandler.getOneOfTransferCtx(System.currentTimeMillis());
+            ctx.writeAndFlush(generateMsg.apply(ctx.channel().attr(NettyAttrUtil.NET_ID).get()));
+            return false;
+        } else
+        {
+            Message message = generateMsg.apply(destClientConn.getNetId());
+            ServerAckWindow.offer(destClientConn.getNetId(), msgId, message, msg -> {
+                destClientConn.getCtx().channel().writeAndFlush(msg);
+            });
+            return true;
+        }
     }
 }

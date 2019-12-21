@@ -1,50 +1,117 @@
 package com.zzh.service;
 
+import com.google.protobuf.Message;
+import com.zzh.domain.ResponseCollector;
 import com.zzh.protobuf.Msg;
-import io.netty.channel.Channel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
+import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 
-
+/**
+ * for server, every connection should has an ServerAckWindow
+ */
 public class ServerAckWindow
 {
-    private Map<Long, Msg.Protocol> ackWindow = new ConcurrentHashMap<>();
-    private ScheduledExecutorService executorService = Executors.newScheduledThreadPool(8);
+    private static final Logger logger = LoggerFactory.getLogger(ServerAckWindow.class);
 
     /**
-     * 将推送的消息加入待ack列表
+     * netId=>ServerAckWindow
      */
-    public void addMsgToAckWindow(Channel destChannel, Msg.Protocol msg)
+    private static Map<Long, ServerAckWindow> windowMap;
+    private static ExecutorService executorService;
+
+    static
     {
-        ackWindow.put(msg.getMsgHead().getMsgId(), msg);
-        executorService.schedule(() -> {
-            if (destChannel.isActive())
-            {
-                checkAndResend(destChannel, msg);
-            }
-        }, 200, TimeUnit.MILLISECONDS);
+        windowMap = new ConcurrentHashMap<>();
+        executorService = Executors.newSingleThreadExecutor();
+        executorService.submit(ServerAckWindow::checkTimeoutAndRetry);
     }
 
-    /**
-     * 将已ack的消息从ack列表删除
-     */
-    public void removeMsgFromAckWindow(long msgId)
+    public ServerAckWindow(Long connectionId, int maxSize, Duration timeout)
     {
-        ackWindow.remove(msgId);
+        this.responseCollectorMap = new ConcurrentHashMap<>();
+        this.timeout = timeout;
+        this.maxSize = maxSize;
+
+        windowMap.put(connectionId, this);
     }
 
 
-    /**
-     * 检查并重推
-     */
-    private void checkAndResend(Channel destChannel, Msg.Protocol msg)
+    private Duration timeout;
+    private int maxSize;
+
+    private ConcurrentHashMap<Long, ResponseCollector<Msg.Protocol>> responseCollectorMap;
+
+    public static CompletableFuture<Msg.Protocol> offer(Long connectionId, Long id, Message sendMessage, Consumer<Message> sendFunction)
     {
-        long msgId = msg.getMsgHead().getMsgId();
-        if (ackWindow.containsKey(msgId) && destChannel.isWritable())
+        return windowMap.get(connectionId).offer(id, sendMessage, sendFunction);
+    }
+
+    public CompletableFuture<Msg.Protocol> offer(Long id, Message sendMessage, Consumer<Message> sendFunction)
+    {
+        if (responseCollectorMap.containsKey(id))
         {
-            destChannel.writeAndFlush(msg);
+            CompletableFuture<Msg.Protocol> future = new CompletableFuture<>();
+            future.completeExceptionally(new Exception("send repeat msg id: " + id));
+            return future;
         }
+        if (responseCollectorMap.size() >= maxSize)
+        {
+            CompletableFuture<Msg.Protocol> future = new CompletableFuture<>();
+            future.completeExceptionally(new Exception("server window is full"));
+            return future;
+        }
+
+        ResponseCollector<Msg.Protocol> responseCollector = new ResponseCollector<>(sendMessage, sendFunction);
+        responseCollector.send();
+        responseCollectorMap.put(id, responseCollector);
+        return responseCollector.getFuture();
+    }
+
+    public void ack(Msg.Protocol message)
+    {
+        Long msgId = Long.parseLong(message.getMsgBody());
+        logger.debug("get ack, msg: {}", msgId);
+        if (responseCollectorMap.containsKey(msgId))
+        {
+            responseCollectorMap.get(msgId).getFuture().complete(message);
+            responseCollectorMap.remove(msgId);
+        }
+    }
+
+
+    /**
+     * 单个线程一直遍历所有channel的ackWin，检查消息是否超时需要重发
+     */
+    private static void checkTimeoutAndRetry()
+    {
+        while (true)
+        {
+            for (ServerAckWindow window : windowMap.values())
+            {
+                window.responseCollectorMap.entrySet().stream()
+                        .filter(entry -> window.timeout(entry.getValue()))
+                        .forEach(entry -> window.retry(entry.getKey(), entry.getValue()));
+
+            }
+        }
+    }
+
+    private void retry(Long id, ResponseCollector<?> collector)
+    {
+        logger.debug("retry msg: {}", id);
+        //todo: if offline
+        collector.send();
+    }
+
+    private boolean timeout(ResponseCollector<?> collector)
+    {
+        return collector.getSendTime().get() != 0 && collector.timeElapse() > timeout.toNanos();
     }
 
 

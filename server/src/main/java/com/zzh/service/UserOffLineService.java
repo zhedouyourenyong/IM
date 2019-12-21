@@ -2,9 +2,10 @@ package com.zzh.service;
 
 import com.alibaba.fastjson.JSONObject;
 import com.zzh.config.ServerConfig;
-import com.zzh.pojo.User;
-import com.zzh.util.ClientChannelContext;
-import io.netty.channel.Channel;
+import com.zzh.constant.Constant;
+import com.zzh.domain.ClientConnectionContext;
+import com.zzh.util.NettyAttrUtil;
+import io.netty.channel.ChannelHandlerContext;
 import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,27 +21,33 @@ public class UserOffLineService
     private final MediaType mediaType = MediaType.parse("application/json");
 
     @Autowired
-    OkHttpClient httpClient;
+    private OkHttpClient httpClient;
     @Autowired
-    ServerConfig serverConfig;
+    private ServerConfig serverConfig;
+    @Autowired
+    private ClientConnectionContext clientConnectionContext;
 
-    public void userOffLine(User userInfo, Channel channel) throws IOException
+    public void userOffLine(ChannelHandlerContext ctx) throws IOException
     {
-        if (userInfo != null)
-        {
-            logger.info("用户{}下线", userInfo.getUserName());
-            clearRouteInfo(userInfo);
-            ClientChannelContext.removeSession(userInfo.getUserId());
-        }
-        ClientChannelContext.remove(channel);
+        String userName = ctx.channel().attr(NettyAttrUtil.USER_NAME).get();
+        String userId = ctx.channel().attr(NettyAttrUtil.USER_ID).get();
+
+        clearRouteInfo(userId);
+
+        clientConnectionContext.removeClientConnection(ctx);
     }
 
-    //清楚路由层保存的用户登录状态和路由信息
-    private void clearRouteInfo(User userInfo) throws IOException
+    /**
+     * 通知路由层 清理 用户的状态/路由/userInfo
+     *
+     * @param userId
+     * @throws IOException
+     */
+    private void clearRouteInfo(String userId) throws IOException
     {
         JSONObject info = new JSONObject();
-        info.put("userId", userInfo.getUserId());
-        info.put("msg", "offLine");
+        info.put(Constant.USER_ID, userId);
+        info.put(Constant.MESSAGE, "offLine");
 
         RequestBody requestBody = RequestBody.create(mediaType, info.toString());
         Request request = new Request.Builder()

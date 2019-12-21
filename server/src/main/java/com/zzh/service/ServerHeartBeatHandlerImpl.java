@@ -4,7 +4,6 @@ import com.zzh.config.ServerConfig;
 import com.zzh.kit.HeartBeatHandler;
 import com.zzh.pojo.User;
 import com.zzh.util.NettyAttrUtil;
-import com.zzh.util.ClientChannelContext;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import org.slf4j.Logger;
@@ -12,17 +11,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-
+/**
+ * 处理没有收到客户端心跳的情况
+ */
 @Service
 public class ServerHeartBeatHandlerImpl implements HeartBeatHandler
 {
     private static final Logger logger = LoggerFactory.getLogger(ServerHeartBeatHandlerImpl.class);
 
     @Autowired
-    ServerConfig serverConfig;
+    private ServerConfig serverConfig;
 
     @Autowired
-    UserOffLineService routeHandler;
+    private UserOffLineService routeHandler;
 
 
     @Override
@@ -33,17 +34,13 @@ public class ServerHeartBeatHandlerImpl implements HeartBeatHandler
         Long lastReadTime = NettyAttrUtil.getLastReaderTime(ctx.channel());
         long now = System.currentTimeMillis();
 
-        User userInfo = null;
         if (lastReadTime != null && now - lastReadTime > heartBeatTime)
         {
-            userInfo = ClientChannelContext.getUserInfo((NioSocketChannel) ctx.channel());
-            if (userInfo != null)
-            {
-                logger.warn("客户端[{}]心跳超时[{}]ms，需要关闭连接!", userInfo.getUserName(), now - lastReadTime);
-            }
+            String userName = ctx.channel().attr(NettyAttrUtil.USER_NAME).get();
+            logger.warn("客户端[{}]心跳超时[{}]ms，需要关闭连接!", userName, now - lastReadTime);
         }
 
-        routeHandler.userOffLine(userInfo, ctx.channel());
+        routeHandler.userOffLine(ctx);
         ctx.channel().close();
     }
 }

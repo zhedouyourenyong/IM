@@ -1,6 +1,6 @@
 package com.zzh;
 
-import com.zzh.discovery.ServerAddressListener;
+import com.zzh.registery.ServerAddressListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

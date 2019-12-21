@@ -165,6 +165,14 @@ public final class Msg {
      * <code>HEART = 6;</code>
      */
     HEART(6),
+    /**
+     * <pre>
+     *下线
+     * </pre>
+     *
+     * <code>OFFLINE = 7;</code>
+     */
+    OFFLINE(7),
     UNRECOGNIZED(-1),
     ;
 
@@ -216,6 +224,14 @@ public final class Msg {
      * <code>HEART = 6;</code>
      */
     public static final int HEART_VALUE = 6;
+    /**
+     * <pre>
+     *下线
+     * </pre>
+     *
+     * <code>OFFLINE = 7;</code>
+     */
+    public static final int OFFLINE_VALUE = 7;
 
 
     public final int getNumber() {
@@ -242,6 +258,7 @@ public final class Msg {
         case 4: return ACK;
         case 5: return ERROR;
         case 6: return HEART;
+        case 7: return OFFLINE;
         default: return null;
       }
     }
@@ -2730,9 +2747,10 @@ public final class Msg {
       "2\030.com.zzh.protobuf.Module\022\016\n\006destId\030\006 \001" +
       "(\t\022\021\n\ttimeStamp\030\007 \001(\003\022*\n\007msgType\030\010 \001(\0162\031" +
       ".com.zzh.protobuf.MsgType* \n\006Module\022\n\n\006C" +
-      "LIENT\020\000\022\n\n\006SERVER\020\001*J\n\007MsgType\022\n\n\006SINGLE" +
+      "LIENT\020\000\022\n\n\006SERVER\020\001*W\n\007MsgType\022\n\n\006SINGLE" +
       "\020\000\022\t\n\005GROUP\020\002\022\t\n\005GREET\020\003\022\007\n\003ACK\020\004\022\t\n\005ERR" +
-      "OR\020\005\022\t\n\005HEART\020\006B\005B\003Msgb\006proto3"
+      "OR\020\005\022\t\n\005HEART\020\006\022\013\n\007OFFLINE\020\007B\005B\003Msgb\006pro" +
+      "to3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

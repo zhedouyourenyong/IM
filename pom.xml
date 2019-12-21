@@ -27,6 +27,7 @@
         <module>common</module>
         <module>client</module>
         <module>route</module>
+        <module>transfer</module>
     </modules>
 
     <dependencies>

@@ -51,9 +51,9 @@ enum Module {
 enum MsgType {
     SINGLE = 0; //私聊消息
     GROUP = 2; //群聊消息
-
     GREET = 3; //登录问候
     ACK = 4; //ack
     ERROR = 5; //错误
     HEART = 6; //心跳
+    OFFLINE = 7; //下线
 }

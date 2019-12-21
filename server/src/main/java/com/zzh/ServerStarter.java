@@ -1,6 +1,8 @@
 package com.zzh;
 
-import com.zzh.discovery.impl.ZKServerAddressRegister;
+import com.zzh.client.TransferClient;
+import com.zzh.config.ServerConfig;
+import com.zzh.registery.impl.ZKServerAddressRegister;
 import com.zzh.server.IMServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,11 +25,14 @@ public class ServerStarter
     private IMServer imServer;
     @Autowired
     private ZKServerAddressRegister addressRegister;
+    @Autowired
+    private ServerConfig serverConfig;
 
     public void start()
     {
         try
         {
+            TransferClient.start(null);
             imServer.start();
             addressRegister.register();
         } catch (Exception e)

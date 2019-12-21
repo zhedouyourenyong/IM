@@ -1,6 +1,6 @@
 package com.zzh.client;
 
-import com.zzh.handler.IMClientHandle;
+import com.zzh.server.handler.IMClientHandle;
 import com.zzh.protobuf.Msg;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
