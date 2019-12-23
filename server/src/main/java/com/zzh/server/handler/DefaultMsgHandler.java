@@ -69,7 +69,7 @@ public class DefaultMsgHandler extends SimpleChannelInboundHandler<Msg.Protocol>
     }
 
     /**
-     * 触发这个方法代表服务端在规定时间内没有收到客户端心跳包
+     * 服务端在规定时间内没有收到客户端心跳包
      *
      * @param ctx
      * @param evt

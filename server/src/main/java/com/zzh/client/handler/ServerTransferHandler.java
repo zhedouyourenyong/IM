@@ -1,6 +1,7 @@
 package com.zzh.client.handler;
 
 
+import com.zzh.IMServerApplication;
 import com.zzh.protobuf.Msg;
 import com.zzh.service.ServerAckWindow;
 import com.zzh.util.IdUtil;
@@ -28,7 +29,6 @@ import java.util.List;
 @ChannelHandler.Sharable
 public class ServerTransferHandler extends SimpleChannelInboundHandler<Msg.Protocol>
 {
-    public static final String CONNECTOR_ID = IdUtil.uuid();
     private static final Logger logger = LoggerFactory.getLogger(ServerTransferHandler.class);
 
     private static List<ChannelHandlerContext> ctxList = new ArrayList<>();
@@ -95,7 +95,7 @@ public class ServerTransferHandler extends SimpleChannelInboundHandler<Msg.Proto
 
     public void putConnectionId(ChannelHandlerContext ctx)
     {
-        ctx.channel().attr(NettyAttrUtil.NET_ID).set(Long.parseLong(IdUtil.uuid()));
+        ctx.channel().attr(NettyAttrUtil.SERVER_ID).set(IdUtil.uuid());
     }
 
     private void greetToTransfer(ChannelHandlerContext ctx)
@@ -108,7 +108,7 @@ public class ServerTransferHandler extends SimpleChannelInboundHandler<Msg.Proto
                 .build();
         Msg.Protocol greet = Msg.Protocol.newBuilder()
                 .setMsgHead(head)
-                .setMsgBody(CONNECTOR_ID)
+                .setMsgBody(IMServerApplication.SERVER_ID)
                 .build();
 
         serverAckWindow.offer(greet.getMsgHead().getMsgId(), greet, msg -> ctx.writeAndFlush(msg))

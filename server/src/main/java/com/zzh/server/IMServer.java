@@ -1,6 +1,7 @@
 package com.zzh.server;
 
 import com.zzh.config.ServerConfig;
+import com.zzh.util.IdUtil;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.epoll.Epoll;
@@ -87,7 +88,7 @@ public class IMServer
             return;
         }
 
-        logger.info("WebSocket server is stopping");
+        logger.info("Netty server is stopping");
         if (bossChannelFuture != null)
         {
             bossChannelFuture.channel().close().awaitUninterruptibly(10, TimeUnit.SECONDS);

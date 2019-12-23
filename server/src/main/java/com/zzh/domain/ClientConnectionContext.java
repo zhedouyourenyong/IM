@@ -70,7 +70,7 @@ public class ClientConnectionContext
 
     public void removeClientConnection(ChannelHandlerContext ctx)
     {
-        Long netId = ctx.channel().attr(ClientConnection.NET_ID).get();
+        Long netId = ctx.channel().attr(NettyAttrUtil.NET_ID).get();
         String userId = ctx.channel().attr(NettyAttrUtil.USER_ID).get();
 
         userIdToNetId.remove(userId);

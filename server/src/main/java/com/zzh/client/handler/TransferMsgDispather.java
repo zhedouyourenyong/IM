@@ -25,15 +25,16 @@ public class TransferMsgDispather
     private static final Logger logger = LoggerFactory.getLogger(TransferMsgDispather.class);
 
 
-    private final Map<Msg.MsgType, TransferHandlerInterface> handlerMap = new HashMap<>();
-    private final ExecutorService executorService = Executors.newFixedThreadPool(8);
+    private Map<Msg.MsgType, TransferHandlerInterface> handlerMap;
+    private ExecutorService executorService = Executors.newFixedThreadPool(8);
 
     private void initHandlerMap()
     {
         try
         {
             Map<String, TransferHandlerInterface> handlers = SpringBeanFactory.getBeansOfType(TransferHandlerInterface.class);
-            if (handlers != null && handlers.size() != 0)
+            handlerMap = new HashMap<>(handlers.size());
+            if (handlers.size() != 0)
             {
                 for (Map.Entry<String, TransferHandlerInterface> entry : handlers.entrySet())
                 {
@@ -42,7 +43,7 @@ public class TransferMsgDispather
                 }
             } else
             {
-                logger.debug("transferHandlersMap is null or size is 0");
+                logger.debug("transferHandlersMap size is 0");
             }
 
         } catch (Exception e)

@@ -32,7 +32,9 @@ public class ServerStarter
     {
         try
         {
-            TransferClient.start(null);
+            String[] urls=new String[1];
+            urls[0]="127.0.0.1:8900";
+            TransferClient.start(urls);
             imServer.start();
             addressRegister.register();
         } catch (Exception e)

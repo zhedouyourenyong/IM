@@ -25,15 +25,16 @@ public class MsgHandlerDispather
     private static final Logger logger = LoggerFactory.getLogger(MsgHandlerDispather.class);
 
 
-    private final Map<Msg.MsgType, ServerHandlerInterface> handlerMap = new HashMap<>();
-    private final ExecutorService executorService = Executors.newFixedThreadPool(8);
+    private Map<Msg.MsgType, ServerHandlerInterface> handlerMap;
+    private ExecutorService executorService = Executors.newFixedThreadPool(8);
 
     private void initHandlerMap()
     {
         try
         {
             Map<String, ServerHandlerInterface> handlers = SpringBeanFactory.getBeansOfType(ServerHandlerInterface.class);
-            if (handlers != null && handlers.size() != 0)
+            handlerMap = new HashMap<>(handlers.size());
+            if (handlers.size() != 0)
             {
                 for (Map.Entry<String, ServerHandlerInterface> entry : handlers.entrySet())
                 {

@@ -1,5 +1,6 @@
 package com.zzh.domain;
 
+import com.zzh.util.NettyAttrUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
 
@@ -16,7 +17,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ClientConnection
 {
-    public static final AttributeKey<Long> NET_ID = AttributeKey.valueOf("netId");
     private static final AtomicLong NETID_GENERATOR = new AtomicLong(0);
 
     private String userId;
@@ -28,7 +28,7 @@ public class ClientConnection
         this.userId = userId;
         this.ctx = ctx;
         this.netId = generateNetId();
-        ctx.channel().attr(NET_ID).set(this.netId);
+        ctx.channel().attr(NettyAttrUtil.NET_ID).set(this.netId);
     }
 
 

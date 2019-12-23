@@ -1,7 +1,9 @@
 package com.zzh.registery.impl;
 
+import com.zzh.IMServerApplication;
 import com.zzh.config.ServerConfig;
 import com.zzh.registery.ServerAddressRegistry;
+import com.zzh.server.IMServer;
 import com.zzh.util.SpringBeanFactory;
 import org.I0Itec.zkclient.ZkClient;
 import org.slf4j.Logger;
@@ -43,10 +45,10 @@ public class ZKServerAddressRegister implements ServerAddressRegistry
                     }
 
                     /**
-                     *  /route/ip-192.168.64.81:8899:8081
+                     *  /route/ip-IP地址:Netty端口:Server唯一识别码
                      */
                     String localAddress = InetAddress.getLocalHost().getHostAddress();
-                    String servicePath = rootPath + "/ip-" + localAddress + ":" + serverConfig.getServerPort() + ":" + serverConfig.getWebPort();
+                    String servicePath = rootPath + "/ip-" + localAddress + ":" + serverConfig.getServerPort() + ":" + IMServerApplication.SERVER_ID;
                     if (!zkClient.exists(servicePath))
                     {
                         zkClient.createEphemeral(servicePath);

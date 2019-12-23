@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class NettyAttrUtil
 {
+    public static final AttributeKey<String> SERVER_ID = AttributeKey.valueOf("serverId");
     public static final AttributeKey<Long> NET_ID = AttributeKey.valueOf("netId");
     public static final AttributeKey<String> USER_ID = AttributeKey.valueOf("userId");
     public static final AttributeKey<String> READ_TIME = AttributeKey.valueOf("readTime");

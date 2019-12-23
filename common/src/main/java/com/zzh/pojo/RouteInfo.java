@@ -7,5 +7,5 @@ public class RouteInfo
 {
     private String ip;
     private String serverPort;
-    private String httpPort;
+    private String serverId;
 }

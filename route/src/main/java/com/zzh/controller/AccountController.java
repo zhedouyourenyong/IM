@@ -28,7 +28,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import javax.annotation.Resource;
 
 
-@Controller("/")
+@Controller()
 public class AccountController
 {
     private static final Logger logger = LoggerFactory.getLogger(AccountController.class);
@@ -45,7 +45,7 @@ public class AccountController
     private UserInfoService userInfoService;
 
 
-    @RequestMapping(value = "login", method = RequestMethod.POST)
+    @RequestMapping(value = "/login", method = RequestMethod.POST)
     @ResponseBody
     public LoginResponseVO login(@RequestBody LoginRequestVO loginReqVO) throws Exception
     {
@@ -60,7 +60,7 @@ public class AccountController
             if (status.getInteger(Constant.STATUS) == 0)
             {
                 /**
-                 * 192.168.64.81:8899:8081
+                 * ip地址:Netty端口号:Server唯一识别码
                  */
                 String address = routeHandle.routeServer(serverAddressListener.getAll(), loginReqVO.getUserId());
                 String[] tmp = address.split(":");
@@ -68,7 +68,7 @@ public class AccountController
                 RouteInfo routeInfo = new RouteInfo();
                 routeInfo.setIp(tmp[0]);
                 routeInfo.setServerPort(tmp[1]);
-                routeInfo.setHttpPort(tmp[2]);
+                routeInfo.setServerId(tmp[2]);
 
                 String addressJson = JSON.toJSONString(routeInfo);
                 result.setRouteInfo(routeInfo);
@@ -84,7 +84,7 @@ public class AccountController
         return result;
     }
 
-    @RequestMapping(value = "registerAccount", method = RequestMethod.POST)
+    @RequestMapping(value = "/registerAccount", method = RequestMethod.POST)
     @ResponseBody()
     public BaseResponse<RegisterInfoRespVO> registerAccount(@RequestBody RegisterInfoReqVO registerInfo) throws Exception
     {
@@ -106,11 +106,12 @@ public class AccountController
 
     /**
      * 由server调用
+     *
      * @param reqVO
      * @return
      * @throws Exception
      */
-    @RequestMapping(value = "offLine", method = RequestMethod.POST)
+    @RequestMapping(value = "/offLine", method = RequestMethod.POST)
     @ResponseBody()
     public BaseResponse<NULLBody> offLine(@RequestBody OffLineReqVO reqVO) throws Exception
     {

@@ -15,11 +15,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 /**
  * @version v1.0
  * @ProjectName: im
- * @Description: TODO(向服务端提供查询用户路由信息的接口)
+ * @Description: (向服务端提供查询用户路由信息的接口)
  * @Author: Administrator
  * @Date: 2019/12/11 14:51
  */
-@Controller("/")
+@Controller()
 public class RouteInfoController
 {
     private static final Logger logger = LoggerFactory.getLogger(RouteInfoController.class);
@@ -27,7 +27,7 @@ public class RouteInfoController
     private RouteInfoService routeInfoService;
 
 
-    @RequestMapping(value = "getRouteInfoByUserId", method = RequestMethod.POST)
+    @RequestMapping(value = "/getRouteInfoByUserId", method = RequestMethod.POST)
     @ResponseBody
     public String getRouteInfo(@RequestBody JSONObject msg)
     {

@@ -3,6 +3,7 @@ package com.zzh.service;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.protobuf.Message;
+import com.zzh.IMServerApplication;
 import com.zzh.client.handler.ServerTransferHandler;
 import com.zzh.domain.ClientConnection;
 import com.zzh.domain.ClientConnectionContext;
@@ -40,7 +41,7 @@ public class MsgTransferHandler
         if (conn == null)
         {
             logger.error("[send chat to client] not one the machine, userId: {}, connectorId: {}",
-                    msg.getMsgHead().getDestId(), ServerTransferHandler.CONNECTOR_ID);
+                    msg.getMsgHead().getDestId(), IMServerApplication.SERVER_ID);
             return;
         }
         //change msg id
@@ -86,7 +87,7 @@ public class MsgTransferHandler
         if (conn == null)
         {
             logger.error("[send msg to client] not one the machine, userId: {}, connectorId: {}",
-                    ackMsg.getMsgHead().getDestId(), ServerTransferHandler.CONNECTOR_ID);
+                    ackMsg.getMsgHead().getDestId(), IMServerApplication.SERVER_ID);
             return;
         }
         Msg.Head copyHead = Msg.Head.newBuilder().mergeFrom(ackMsg.getMsgHead()).setMsgId(IdUtil.nextId(conn.getNetId())).build();

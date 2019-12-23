@@ -55,4 +55,5 @@ public class BeanConfig
                 .retryOnConnectionFailure(true);
         return builder.build();
     }
+
 }

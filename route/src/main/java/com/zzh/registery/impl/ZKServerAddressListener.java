@@ -37,7 +37,7 @@ public class ZKServerAddressListener implements ServerAddressInvoker
         synchronized (ZKServerAddressListener.class)
         {
             List<String> serverAddress = getAll(config.getRegistryRootPath());
-            logger.info("获取到的服务端地址:{}",serverAddress.toArray().toString());
+            logger.info("获取到的服务端地址信息:{}",serverAddress.toArray().toString());
             updateCache(serverAddress);
 
             /**
