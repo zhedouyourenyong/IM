@@ -1,0 +1,7 @@
+client server transfer
+
+client只有一条与server之间的连接，不用标识。
+server同时有多条client连接，每个client有个唯一标识，server通过这个唯一标识来区分不同的client。
+
+server端不标识与transfer之间的连接
+transfer同时有多条server连接，每个server有个唯一标识，transfer通过这个唯一标识来区分不同的server。

@@ -16,4 +16,5 @@ public interface Constant
     String TO_ID = "toId";
     String STATUS = "status";
     String MESSAGE = "message";
+    String CLIENT_ID="clientId";
 }

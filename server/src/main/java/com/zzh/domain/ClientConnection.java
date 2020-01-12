@@ -1,11 +1,7 @@
 package com.zzh.domain;
 
-import com.zzh.util.NettyAttrUtil;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.util.AttributeKey;
-
-import java.io.Serializable;
-import java.util.concurrent.atomic.AtomicLong;
+import lombok.Data;
 
 /**
  * @version v1.0
@@ -15,47 +11,17 @@ import java.util.concurrent.atomic.AtomicLong;
  * @Author: Administrator
  * @Date: 2019/12/14 14:53
  */
+@Data
 public class ClientConnection
 {
-    private static final AtomicLong NETID_GENERATOR = new AtomicLong(0);
-
     private String userId;
     private ChannelHandlerContext ctx;
-    private Long netId;
+    private String clientId;
 
-    public ClientConnection(String userId, ChannelHandlerContext ctx)
+    public ClientConnection(String userId, String clientId, ChannelHandlerContext ctx)
     {
+        this.clientId = clientId;
         this.userId = userId;
         this.ctx = ctx;
-        this.netId = generateNetId();
-        ctx.channel().attr(NettyAttrUtil.NET_ID).set(this.netId);
-    }
-
-
-    public String getUserId()
-    {
-        return userId;
-    }
-
-    public ChannelHandlerContext getCtx()
-    {
-        return ctx;
-    }
-
-    public Long getNetId()
-    {
-        return netId;
-    }
-
-
-    /**
-     * 生成netId
-     *
-     * @param
-     * @return
-     */
-    private Long generateNetId()
-    {
-        return NETID_GENERATOR.getAndIncrement();
     }
 }

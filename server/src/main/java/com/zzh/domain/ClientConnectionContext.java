@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * @version v1.0
  * @ProjectName: im
- * @Description: 保存客户端连接容器，建立userId->netId,netId-> ClientConnection 的映射
+ * @Description: 保存客户端连接容器，建立userId->clientId,clientId-> ClientConnection 的映射
  * @Author: Administrator
  * @Date: 2019/12/14 15:04
  */
@@ -20,31 +20,31 @@ public class ClientConnectionContext
 {
     private static final Logger logger = LoggerFactory.getLogger(ClientConnectionContext.class);
 
-    private final ConcurrentHashMap<String, Long> userIdToNetId = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, ClientConnection> netIdToClientConnection = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, String> userIdToNetId = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, ClientConnection> netIdToClientConnection = new ConcurrentHashMap<>();
 
 
     public void addClientConnection(ClientConnection connection)
     {
         String userId = connection.getUserId();
-        Long netId = connection.getNetId();
+        String clientId = connection.getClientId();
 
-        logger.debug("[add conn on this machine] userId:{} , netId:{}", userId, netId);
+        logger.debug("[add conn on this machine] userId:{} , clientId:{}", userId, clientId);
 
-        userIdToNetId.put(userId, netId);
-        netIdToClientConnection.put(netId, connection);
+        userIdToNetId.put(userId, clientId);
+        netIdToClientConnection.put(clientId, connection);
     }
 
     public ClientConnection getClientConnectionByUserId(String userId)
     {
-        Long netId = userIdToNetId.get(userId);
-        if (netId == null)
+        String clientId = userIdToNetId.get(userId);
+        if (clientId == null)
         {
             logger.debug("[get conn this machine] netId not found");
             return null;
         }
 
-        ClientConnection clientConnection = netIdToClientConnection.get(netId);
+        ClientConnection clientConnection = netIdToClientConnection.get(clientId);
         if (clientConnection == null)
         {
             logger.debug("[get conn this machine] conn not found");
@@ -52,7 +52,7 @@ public class ClientConnectionContext
             return null;
         } else
         {
-            logger.debug("[get conn this machine] found conn, userId:{}, connId: {}", userId, netId);
+            logger.debug("[get conn this machine] found conn, userId:{}, clientId: {}", userId, clientId);
         }
         return clientConnection;
     }
@@ -75,6 +75,16 @@ public class ClientConnectionContext
 
         userIdToNetId.remove(userId);
         netIdToClientConnection.remove(netId);
+    }
+
+    /**
+     * 根据userId检查目标channel是否在本机
+     * @param userId
+     * @return
+     */
+    public boolean onThisMachine(String userId)
+    {
+        return userIdToNetId.containsKey(userId);
     }
 
 }

@@ -1,7 +1,7 @@
 package com.zzh.client;
 
-import com.zzh.server.handler.IMClientHandle;
-import com.zzh.protobuf.Msg;
+import com.zzh.handler.IMClientHandle;
+import com.zzh.protobuf.Protocol;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -21,7 +21,7 @@ public class IMClientInitializer extends ChannelInitializer<NioSocketChannel>
         ChannelPipeline pipeline = channel.pipeline();
         pipeline.addLast("IdleStateHandler", new IdleStateHandler(11, 0, 0));
         pipeline.addLast(new ProtobufVarint32FrameDecoder());
-        pipeline.addLast(new ProtobufDecoder(Msg.Protocol.getDefaultInstance()));
+        pipeline.addLast(new ProtobufDecoder(Protocol.Msg.getDefaultInstance()));
         pipeline.addLast(new ProtobufVarint32LengthFieldPrepender());
         pipeline.addLast(new ProtobufEncoder());
         pipeline.addLast("IMClientHandle", clientHandle);

@@ -1,8 +1,6 @@
 package com.zzh.config;
 
 
-import com.zzh.protobuf.Msg;
-import com.zzh.util.IdUtil;
 import okhttp3.OkHttpClient;
 import org.I0Itec.zkclient.ZkClient;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +14,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
 
 @Configuration
 public class BeanConfig

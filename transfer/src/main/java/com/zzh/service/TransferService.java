@@ -6,10 +6,9 @@ import com.zzh.constant.RedisKey;
 import com.zzh.domain.ServerTransferConn;
 import com.zzh.domain.ServerTransferConnContext;
 import com.zzh.pojo.RouteInfo;
-import com.zzh.protobuf.Msg;
+import com.zzh.protobuf.Protocol;
 import com.zzh.util.IdUtil;
 import io.netty.channel.ChannelHandlerContext;
-import okhttp3.OkHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +35,7 @@ public class TransferService
     private StringRedisTemplate redisTemplate;
 
 
-    public void doChat(Msg.Protocol msg) throws IOException
+    public void doChat(Protocol.Msg msg) throws IOException
     {
         ServerTransferConn conn = getConnection(msg);
 
@@ -49,7 +48,7 @@ public class TransferService
         }
     }
 
-    public void doSendAck(Msg.Protocol msg) throws IOException
+    public void doSendAck(Protocol.Msg msg) throws IOException
     {
         ServerTransferConn conn = getConnection(msg);
 
@@ -62,21 +61,21 @@ public class TransferService
         }
     }
 
-    public void doGreet(Msg.Protocol msg, ChannelHandlerContext ctx)
+    public void doGreet(Protocol.Msg msg, ChannelHandlerContext ctx)
     {
         String serverId = msg.getMsgBody();
         ServerTransferConn conn = new ServerTransferConn(serverId, ctx);
         context.addConnection(conn);
 
-        ctx.writeAndFlush(getInternalAck(msg.getMsgHead().getMsgId()));
+        ctx.writeAndFlush(getInternalAck(msg.getId()));
     }
 
-    private ServerTransferConn getConnection(Msg.Protocol msg)
+    private ServerTransferConn getConnection(Protocol.Msg msg)
     {
-        String routeInfo = redisTemplate.opsForValue().get(RedisKey.ROUTE_PREFIX + msg.getMsgHead().getDestId());
+        String routeInfo = redisTemplate.opsForValue().get(RedisKey.ROUTE_PREFIX + msg.getDestId());
         if (routeInfo == null)
         {
-            logger.error("not found routeInfo,userID:{}", msg.getMsgHead().getDestId());
+            logger.error("not found routeInfo,userID:{}", msg.getDestId());
             return null;
         } else
         {
@@ -88,16 +87,14 @@ public class TransferService
     }
 
 
-    private Msg.Protocol getInternalAck(Long msgId)
+    private Protocol.Msg getInternalAck(String msgId)
     {
-        Msg.Head head = Msg.Head.newBuilder()
-                .setVersion(1)
-                .setMsgId(IdUtil.snowGenId())
-                .setMsgType(Msg.MsgType.ACK)
-                .setTimeStamp(System.currentTimeMillis())
-                .build();
-        return Msg.Protocol.newBuilder()
-                .setMsgHead(head)
+        return Protocol.Msg.newBuilder()
+                .setId(String.valueOf(IdUtil.snowGenId()))
+                .setFromModule(Protocol.Module.TRANSFER)
+                .setDestModule(Protocol.Module.SERVER)
+                .setMsgType(Protocol.MsgType.ACK)
+                .setTimeStamp(String.valueOf(System.currentTimeMillis()))
                 .setMsgBody(msgId.toString())
                 .build();
     }

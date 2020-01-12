@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 /**
  * @version v1.0
  * @ProjectName: im
- * @Description: TODO(一句话描述该类的功能)
+ * @Description:
  * @Author: Administrator
  * @Date: 2019/12/11 17:33
  */

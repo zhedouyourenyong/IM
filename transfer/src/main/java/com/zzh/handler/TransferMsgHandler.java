@@ -1,7 +1,7 @@
 package com.zzh.handler;
 
 import com.zzh.domain.ServerTransferConnContext;
-import com.zzh.protobuf.Msg;
+import com.zzh.protobuf.Protocol;
 import com.zzh.service.TransferService;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @ChannelHandler.Sharable
-public class TransferMsgHandler extends SimpleChannelInboundHandler<Msg.Protocol>
+public class TransferMsgHandler extends SimpleChannelInboundHandler<Protocol.Msg>
 {
     private static final Logger logger = LoggerFactory.getLogger(TransferMsgHandler.class);
     @Autowired
@@ -29,18 +29,18 @@ public class TransferMsgHandler extends SimpleChannelInboundHandler<Msg.Protocol
     private TransferService transferService;
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Msg.Protocol msg) throws Exception
+    protected void channelRead0(ChannelHandlerContext ctx, Protocol.Msg msg) throws Exception
     {
         logger.info("receive msg:{}",msg.toString());
 
-        Msg.MsgType msgType = msg.getMsgHead().getMsgType();
-        if (msgType == Msg.MsgType.GREET)
+        Protocol.MsgType msgType = msg.getMsgType();
+        if (msgType == Protocol.MsgType.GREET)
         {
             transferService.doGreet(msg, ctx);
-        } else if (msgType == Msg.MsgType.ACK)
+        } else if (msgType == Protocol.MsgType.ACK)
         {
             transferService.doSendAck(msg);
-        } else if (msgType == Msg.MsgType.SINGLE)
+        } else if (msgType == Protocol.MsgType.SINGLE)
         {
             transferService.doChat(msg);
         }
