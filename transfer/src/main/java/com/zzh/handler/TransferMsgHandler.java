@@ -1,13 +1,15 @@
 package com.zzh.handler;
 
+import com.google.protobuf.Message;
 import com.zzh.domain.ServerTransferConnContext;
-import com.zzh.protobuf.Protocol;
+import com.zzh.protocol.Ack;
+import com.zzh.protocol.Internal;
+import com.zzh.protocol.Single;
 import com.zzh.service.TransferService;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -18,31 +20,30 @@ import org.springframework.stereotype.Component;
  * @Author: Administrator
  * @Date: 2019/12/21 22:51
  */
+@Slf4j
 @Component
 @ChannelHandler.Sharable
-public class TransferMsgHandler extends SimpleChannelInboundHandler<Protocol.Msg>
+public class TransferMsgHandler extends SimpleChannelInboundHandler<Message>
 {
-    private static final Logger logger = LoggerFactory.getLogger(TransferMsgHandler.class);
     @Autowired
     private ServerTransferConnContext connContext;
     @Autowired
     private TransferService transferService;
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, Protocol.Msg msg) throws Exception
+    protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception
     {
-        logger.info("receive msg:{}",msg.toString());
+        log.info("receive msg:{}", msg.toString());
 
-        Protocol.MsgType msgType = msg.getMsgType();
-        if (msgType == Protocol.MsgType.GREET)
+        if (msg instanceof Single.SingleMsg)
         {
-            transferService.doGreet(msg, ctx);
-        } else if (msgType == Protocol.MsgType.ACK)
+            transferService.doChat((Single.SingleMsg) msg);
+        } else if (msg instanceof Ack.AckMsg)
         {
-            transferService.doSendAck(msg);
-        } else if (msgType == Protocol.MsgType.SINGLE)
+            transferService.doSendAck((Ack.AckMsg) msg);
+        } else if (msg instanceof Internal.InternalMsg)
         {
-            transferService.doChat(msg);
+            transferService.doGreet((Internal.InternalMsg) msg, ctx);
         }
     }
 
@@ -51,5 +52,4 @@ public class TransferMsgHandler extends SimpleChannelInboundHandler<Protocol.Msg
     {
         connContext.removeConnection(ctx);
     }
-
 }

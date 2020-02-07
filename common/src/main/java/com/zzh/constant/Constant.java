@@ -3,7 +3,7 @@ package com.zzh.constant;
 /**
  * @version v1.0
  * @ProjectName: im
- * @Description: TODO(一句话描述该类的功能)
+ * @Description:
  * @Author: Administrator
  * @Date: 2019/12/10 14:31
  */
@@ -14,7 +14,7 @@ public interface Constant
     String ITd = "tid";
     String FROM_ID = "fromId";
     String TO_ID = "toId";
-    String STATUS = "status";
+    String SUCCESS = "success";
     String MESSAGE = "message";
     String CLIENT_ID="clientId";
 }

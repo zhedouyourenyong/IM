@@ -1,104 +1,107 @@
 package com.zzh.controller;
 
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
-import com.zzh.algorithm.RouteHandle;
+import com.zzh.http.request.OffLineRequest;
+import com.zzh.http.request.RegisterRequest;
+import com.zzh.loadbalance.LoadBalance;
 import com.zzh.constant.Constant;
-import com.zzh.registery.impl.ZKServerAddressListener;
+import com.zzh.http.BaseResponse;
+import com.zzh.pojo.User;
+import com.zzh.discovery.ServerAddressCache;
 import com.zzh.enums.StatusEnum;
 import com.zzh.pojo.RouteInfo;
-import com.zzh.pojo.User;
-import com.zzh.request.LoginRequestVO;
-import com.zzh.request.OffLineReqVO;
-import com.zzh.request.RegisterInfoReqVO;
-import com.zzh.response.*;
+import com.zzh.http.request.LoginRequestVO;
+import com.zzh.http.response.*;
 import com.zzh.service.AccountService;
 import com.zzh.service.RouteInfoService;
 import com.zzh.service.UserInfoService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 
 
-@Controller()
+@Slf4j
+@RestController
 public class AccountController
 {
-    private static final Logger logger = LoggerFactory.getLogger(AccountController.class);
-
     @Resource(name = "LoopHandle")
-    private RouteHandle routeHandle;
-    @Autowired
-    private ZKServerAddressListener serverAddressListener;
-    @Autowired
+    private LoadBalance routeHandle;
+
+    private ServerAddressCache serverAddressCache;
     private AccountService accountService;
-    @Autowired
     private RouteInfoService routeInfoService;
-    @Autowired
     private UserInfoService userInfoService;
+
+    @Autowired
+    public AccountController(ServerAddressCache serverAddressCache, AccountService accountService, RouteInfoService routeInfoService, UserInfoService userInfoService)
+    {
+        this.serverAddressCache = serverAddressCache;
+        this.accountService = accountService;
+        this.routeInfoService = routeInfoService;
+        this.userInfoService = userInfoService;
+    }
 
 
     @RequestMapping(value = "/login", method = RequestMethod.POST)
-    @ResponseBody
-    public LoginResponseVO login(@RequestBody LoginRequestVO loginReqVO) throws Exception
+    public LoginResponse login(@RequestBody LoginRequestVO loginReqVO) throws Exception
     {
-        logger.info(loginReqVO.toString());
-        LoginResponseVO result = new LoginResponseVO();
+        log.info(loginReqVO.toString());
+
+        LoginResponse result = new LoginResponse();
         try
         {
-            JSONObject status = accountService.login(loginReqVO.getUserName(), loginReqVO.getPassword());
-            result.setCode(status.getString(Constant.STATUS));
-            result.setMessage(status.getString(Constant.MESSAGE));
+            JSONObject status = accountService.login(loginReqVO.getName(), loginReqVO.getPassword());
+            result.setSuccess(status.getBoolean(Constant.SUCCESS));
+            result.setReason(status.getString(Constant.MESSAGE));
 
-            if (status.getInteger(Constant.STATUS) == 0)
+            if (status.getBoolean(Constant.SUCCESS))
             {
                 /**
                  * ip地址:Netty端口号:Server唯一识别码
                  */
-                String address = routeHandle.routeServer(serverAddressListener.getAll(), loginReqVO.getUserId());
-                String[] tmp = address.split(":");
+                String address = routeHandle.routeServer(serverAddressCache.getAll());
+                JSONObject url = JSONObject.parseObject(address);
 
                 RouteInfo routeInfo = new RouteInfo();
-                routeInfo.setIp(tmp[0]);
-                routeInfo.setServerPort(tmp[1]);
-                routeInfo.setServerId(tmp[2]);
+                routeInfo.setIp(url.getString("ip"));
+                routeInfo.setPort(url.getInteger("serverPort"));
+                routeInfo.setServerId(url.getString("serverId"));
 
-                String addressJson = JSON.toJSONString(routeInfo);
+                String addressJson = JSONObject.toJSONString(routeInfo);
                 result.setRouteInfo(routeInfo);
+                result.setUserId(status.getString(Constant.USER_ID));
 
                 //保存路由信息
-                routeInfoService.saveRouteInfo(status.getString(Constant.USER_ID), addressJson);
+                routeInfoService.saveRouteInfo(result.getUserId(), addressJson);
+
+                return result;
             }
         } catch (Exception e)
         {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
+            result.setSuccess(false);
+            result.setReason(e.getMessage());
         }
-
         return result;
     }
 
     @RequestMapping(value = "/registerAccount", method = RequestMethod.POST)
-    @ResponseBody()
-    public BaseResponse<RegisterInfoRespVO> registerAccount(@RequestBody RegisterInfoReqVO registerInfo) throws Exception
+    public BaseResponse<RegisterResponse> registerAccount(@RequestBody RegisterRequest registerInfo) throws Exception
     {
-        BaseResponse<RegisterInfoRespVO> result = new BaseResponse<>();
+        BaseResponse<RegisterResponse> result = new BaseResponse<>();
 
         JSONObject info = accountService.register(registerInfo.getUserName(), registerInfo.getPassword());
-        StatusEnum status = (StatusEnum) info.get(Constant.STATUS);
+        StatusEnum status = (StatusEnum) info.get(Constant.SUCCESS);
 
         result.setCode(status.getCode());
         result.setMessage(status.getMessage());
 
         if (status == StatusEnum.SUCCESS)
         {
-            RegisterInfoRespVO resp = new RegisterInfoRespVO((Long) info.get("userId"), registerInfo.getUserName());
+            RegisterResponse resp = new RegisterResponse((Long) info.get("userId"), registerInfo.getUserName());
             result.setDataBody(resp);
         }
         return result;
@@ -112,14 +115,13 @@ public class AccountController
      * @throws Exception
      */
     @RequestMapping(value = "/offLine", method = RequestMethod.POST)
-    @ResponseBody()
-    public BaseResponse<NULLBody> offLine(@RequestBody OffLineReqVO reqVO) throws Exception
+    public BaseResponse offLine(@RequestBody OffLineRequest reqVO) throws Exception
     {
-        BaseResponse<NULLBody> res = new BaseResponse();
+        BaseResponse res = new BaseResponse();
 
         User user = userInfoService.getUserInfoByUserId(reqVO.getUserId());
 
-        logger.info("下线用户[{}]", user.toString());
+        log.info("下线用户[{}]", user.toString());
         accountService.offLine(reqVO.getUserId());
 
         res.setCode(StatusEnum.SUCCESS.getCode());

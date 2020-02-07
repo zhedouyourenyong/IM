@@ -1,29 +1,40 @@
 package com.zzh;
 
-import com.zzh.registery.ServerAddressListener;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.zzh.discovery.ZKServerAddressDiscovery;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 /**
  * @version v1.0
  * @ProjectName: im
- * @Description: TODO(一句话描述该类的功能)
+ * @Description: route启动工作
  * @Author: Administrator
- * @Date: 2019/12/11 13:49
+ * @Date: 2020/1/29 19:08
  */
+@Slf4j
 @Component
-public class RouteStarter
+public class RouteStarter implements CommandLineRunner
 {
-    private static final Logger logger = LoggerFactory.getLogger(RouteStarter.class);
+
+    private ZKServerAddressDiscovery zkServerAddressDiscovery;
 
     @Autowired
-    private ServerAddressListener addressListener;
-
-    public void start()
+    public RouteStarter(ZKServerAddressDiscovery zkServerAddressRegistry)
     {
-        addressListener.start();
+        this.zkServerAddressDiscovery = zkServerAddressRegistry;
     }
 
+    @Override
+    public void run(String... args) throws Exception
+    {
+        try
+        {
+            zkServerAddressDiscovery.discovery();
+        } catch (Exception e)
+        {
+            log.error(e.getMessage());
+        }
+    }
 }

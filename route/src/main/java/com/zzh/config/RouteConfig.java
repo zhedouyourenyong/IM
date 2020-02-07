@@ -18,7 +18,6 @@ public class RouteConfig
     @Value("${zk.connection.timeout}")
     private int connectionTimeout;
 
-
     @Value("${zk.registry.root}")
     private String registryRootPath;
 

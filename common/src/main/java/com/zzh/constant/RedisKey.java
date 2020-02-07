@@ -3,7 +3,7 @@ package com.zzh.constant;
 /**
  * @version v1.0
  * @ProjectName: im
- * @Description: TODO(一句话描述该类的功能)
+ * @Description:
  * @Author: Administrator
  * @Date: 2019/12/10 15:42
  */
@@ -28,4 +28,9 @@ public interface RedisKey
      * 检查幂等性
      */
     String CONSUMED_MESSAGE="consumed-message";
+
+    /**
+     * token
+     */
+    String TOKEN_PREFIX="token:";
 }

@@ -6,35 +6,44 @@ import com.zzh.constant.Constant;
 import com.zzh.domain.ClientConnectionContext;
 import com.zzh.util.NettyAttrUtil;
 import io.netty.channel.ChannelHandlerContext;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 
+@Slf4j
 @Service
 public class UserOffLineService
 {
-    private final static Logger logger = LoggerFactory.getLogger(UserOffLineService.class);
     private final MediaType mediaType = MediaType.parse("application/json");
 
-    @Autowired
     private OkHttpClient httpClient;
-    @Autowired
     private ServerConfig serverConfig;
-    @Autowired
-    private ClientConnectionContext clientConnectionContext;
+    private ClientConnectionContext connContext;
 
+    @Autowired
+    public UserOffLineService(OkHttpClient httpClient, ServerConfig serverConfig, ClientConnectionContext connContext)
+    {
+        this.httpClient = httpClient;
+        this.serverConfig = serverConfig;
+        this.connContext = connContext;
+    }
+
+
+    @Async("taskPool")
     public void userOffLine(ChannelHandlerContext ctx) throws IOException
     {
-        String userName = ctx.channel().attr(NettyAttrUtil.USER_NAME).get();
         String userId = ctx.channel().attr(NettyAttrUtil.USER_ID).get();
 
         clearRouteInfo(userId);
 
-        clientConnectionContext.removeClientConnection(ctx);
+        connContext.removeClientConnection(ctx);
     }
 
     /**

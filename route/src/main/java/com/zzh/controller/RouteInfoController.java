@@ -3,14 +3,9 @@ package com.zzh.controller;
 import com.alibaba.fastjson.JSONObject;
 import com.zzh.constant.Constant;
 import com.zzh.service.RouteInfoService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * @version v1.0
@@ -19,19 +14,23 @@ import org.springframework.web.bind.annotation.ResponseBody;
  * @Author: Administrator
  * @Date: 2019/12/11 14:51
  */
-@Controller()
+@Slf4j
+@RestController
 public class RouteInfoController
 {
-    private static final Logger logger = LoggerFactory.getLogger(RouteInfoController.class);
-    @Autowired
     private RouteInfoService routeInfoService;
+
+    @Autowired
+    public RouteInfoController(RouteInfoService routeInfoService)
+    {
+        this.routeInfoService = routeInfoService;
+    }
 
 
     @RequestMapping(value = "/getRouteInfoByUserId", method = RequestMethod.POST)
-    @ResponseBody
-    public String getRouteInfo(@RequestBody JSONObject msg)
+     public String getRouteInfo(@RequestBody JSONObject msg)
     {
-        logger.info("Query ServerInfo,{}->{}", msg.getString(Constant.FROM_ID), msg.getString(Constant.TO_ID));
+        log.info("Query ServerInfo,{}->{}", msg.getString(Constant.FROM_ID), msg.getString(Constant.TO_ID));
 
         String routeInfo = null;
         try
@@ -40,7 +39,7 @@ public class RouteInfoController
             routeInfo = routeInfoService.getRouteInfoByUserId(userId);
         } catch (Exception e)
         {
-            logger.error(e.getMessage(), e);
+            log.error(e.getMessage(), e);
         }
         return routeInfo;
     }

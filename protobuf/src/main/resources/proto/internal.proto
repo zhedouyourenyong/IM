@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package com.zzh.protocol;
+option java_outer_classname = "Internal";
+
+
+message InternalMsg {
+    // 消息唯一ID
+    int64 id = 1;
+
+    //创建时间
+    int64 timeStamp = 2;
+
+
+    Module from = 3;
+
+    Module dest = 4;
+
+    MsgType msgType = 5;
+
+    string body = 6;
+
+    enum MsgType {
+        GREET_REQUEST = 0;
+        GREET_RESPONSE = 1;
+
+        HEART_REQUEST = 2;
+        HEART_RESPONSE = 3;
+    }
+
+    enum Module {
+        CLIENT = 0;
+        SERVER = 1;
+        TRANSFER = 2;
+    }
+}

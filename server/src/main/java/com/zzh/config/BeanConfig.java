@@ -11,27 +11,24 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 
 @Configuration
 public class BeanConfig
 {
+    private ZkConfig zkConfig;
+
     @Autowired
-    ServerConfig serverConfig;
+    public BeanConfig(ZkConfig zkConfig)
+    {
+        this.zkConfig = zkConfig;
+    }
 
     @Bean
     public ZkClient buildZKClient()
     {
-        return new ZkClient(serverConfig.getZkAddress(), serverConfig.getSessionTimeout(), serverConfig.getConnectionTimeout());
-    }
-
-    @Bean
-    public ExecutorService threadPool()
-    {
-        return Executors.newFixedThreadPool(8);
+        return new ZkClient(zkConfig.getZkAddress(), zkConfig.getSessionTimeout(), zkConfig.getConnectionTimeout());
     }
 
     @Bean

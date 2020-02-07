@@ -12,5 +12,30 @@
 
     <artifactId>common</artifactId>
 
+    <dependencies>
+    </dependencies>
+
+
+    <build>
+        <plugins>
+            <!--            &lt;!&ndash; 资源文件拷贝插件 &ndash;&gt;-->
+            <!--            <plugin>-->
+            <!--                <groupId>org.apache.maven.plugins</groupId>-->
+            <!--                <artifactId>maven-resources-plugin</artifactId>-->
+            <!--                <configuration>-->
+            <!--                    <encoding>UTF-8</encoding>-->
+            <!--                </configuration>-->
+            <!--            </plugin>-->
+            <!--            <plugin>-->
+            <!--                <groupId>org.springframework.boot</groupId>-->
+            <!--                <artifactId>spring-boot-maven-plugin</artifactId>-->
+            <!--                &lt;!&ndash;命名可执行jar名字，默认可执行Jar包与普通jar命名相同，前者会将后者覆盖，可执行Jar不能够被其他模块引用&ndash;&gt;-->
+            <!--                <configuration>-->
+            <!--                    <classifier>exec</classifier>-->
+            <!--                </configuration>-->
+            <!--            </plugin>-->
+        </plugins>
+    </build>
+
 
 </project>

@@ -1,9 +1,7 @@
 package com.zzh.domain;
 
 import com.google.protobuf.Message;
-import com.zzh.protobuf.Protocol;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -18,18 +16,17 @@ import java.util.function.Consumer;
  * @Author: Administrator
  * @Date: 2019/12/19 13:58
  */
+@Slf4j
 public class ResponseCollector
 {
-    private static final Logger logger = LoggerFactory.getLogger(ResponseCollector.class);
-
-    private Protocol.Msg sendMessage;
-    private Consumer<Protocol.Msg> sendFunction;
-    private CompletableFuture<Protocol.Msg> future;
+    private Message sendMessage;
+    private Consumer<Message> sendFunction;
+    private CompletableFuture<Message> future;
 
     private volatile AtomicLong sendTime;
     private volatile AtomicBoolean sending;
 
-    public ResponseCollector(Protocol.Msg sendMessage, Consumer<Protocol.Msg> sendFunction)
+    public ResponseCollector(Message sendMessage, Consumer<Message> sendFunction)
     {
         this.sendMessage = sendMessage;
         this.sendFunction = sendFunction;
@@ -48,7 +45,7 @@ public class ResponseCollector
                 sendFunction.accept(sendMessage);
             } catch (Exception e)
             {
-                logger.error("send msg send has error", e);
+                log.error("send msg send has error", e);
             } finally
             {
                 this.sending.set(false);
@@ -61,7 +58,7 @@ public class ResponseCollector
         return System.nanoTime() - sendTime.get();
     }
 
-    public CompletableFuture<Protocol.Msg> getFuture()
+    public CompletableFuture<Message> getFuture()
     {
         return future;
     }

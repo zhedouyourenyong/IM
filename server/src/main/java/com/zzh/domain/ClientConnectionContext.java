@@ -2,6 +2,7 @@ package com.zzh.domain;
 
 import com.zzh.util.NettyAttrUtil;
 import io.netty.channel.ChannelHandlerContext;
+import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -15,11 +16,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * @Author: Administrator
  * @Date: 2019/12/14 15:04
  */
+@Slf4j
 @Component
 public class ClientConnectionContext
 {
-    private static final Logger logger = LoggerFactory.getLogger(ClientConnectionContext.class);
-
     private final ConcurrentHashMap<String, String> userIdToNetId = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, ClientConnection> netIdToClientConnection = new ConcurrentHashMap<>();
 
@@ -29,7 +29,7 @@ public class ClientConnectionContext
         String userId = connection.getUserId();
         String clientId = connection.getClientId();
 
-        logger.debug("[add conn on this machine] userId:{} , clientId:{}", userId, clientId);
+        log.debug("[add conn on this machine] userId:{} , clientId:{}", userId, clientId);
 
         userIdToNetId.put(userId, clientId);
         netIdToClientConnection.put(clientId, connection);
@@ -40,29 +40,29 @@ public class ClientConnectionContext
         String clientId = userIdToNetId.get(userId);
         if (clientId == null)
         {
-            logger.debug("[get conn this machine] netId not found");
+            log.debug("[get conn this machine] netId not found");
             return null;
         }
 
         ClientConnection clientConnection = netIdToClientConnection.get(clientId);
         if (clientConnection == null)
         {
-            logger.debug("[get conn this machine] conn not found");
+            log.debug("[get conn this machine] conn not found");
             userIdToNetId.remove(userId);
             return null;
         } else
         {
-            logger.debug("[get conn this machine] found conn, userId:{}, clientId: {}", userId, clientId);
+            log.debug("[get conn this machine] found conn, userId:{}, clientId: {}", userId, clientId);
         }
         return clientConnection;
     }
 
-    public ClientConnection getClientConnectionByNetId(Long netId)
+    public ClientConnection getClientConnectionByClientId(String clientId)
     {
-        ClientConnection clientConnection = netIdToClientConnection.get(netId);
+        ClientConnection clientConnection = netIdToClientConnection.get(clientId);
         if (clientConnection == null)
         {
-            logger.debug("[get conn this machine] conn not found");
+            log.debug("[get conn this machine] conn not found");
             return null;
         }
         return clientConnection;
@@ -70,11 +70,11 @@ public class ClientConnectionContext
 
     public void removeClientConnection(ChannelHandlerContext ctx)
     {
-        Long netId = ctx.channel().attr(NettyAttrUtil.NET_ID).get();
+        String clientId = ctx.channel().attr(NettyAttrUtil.CLIENT_ID).get();
         String userId = ctx.channel().attr(NettyAttrUtil.USER_ID).get();
 
         userIdToNetId.remove(userId);
-        netIdToClientConnection.remove(netId);
+        netIdToClientConnection.remove(clientId);
     }
 
     /**

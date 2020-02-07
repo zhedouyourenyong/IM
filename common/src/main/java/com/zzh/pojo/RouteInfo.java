@@ -6,6 +6,6 @@ import lombok.Data;
 public class RouteInfo
 {
     private String ip;
-    private String serverPort;
+    private Integer port;
     private String serverId;
 }

@@ -1,88 +1,87 @@
 package com.zzh.client;
 
-import com.zzh.request.LoginRequestVO;
-import com.zzh.pojo.RouteInfo;
-import com.zzh.service.RouteRequest;
-import com.zzh.util.SessionHolder;
+import com.zzh.handler.IMClientHandle;
+import com.zzh.protocol.codec.MsgDecoder;
+import com.zzh.protocol.codec.MsgEncoder;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.ChannelFuture;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
+
+@Slf4j
 @Component
 public class IMClient
 {
-    private static final Logger logger = LoggerFactory.getLogger(IMClient.class);
+    private static final int MAX_RETRY = 5;
+    private CountDownLatch countDownLatch = new CountDownLatch(1);
 
-    private ChannelFuture channelFuture;
+    private final IMClientHandle clientHandle = new IMClientHandle();
 
-    @Autowired
-    RouteRequest routeRequest;
+    private Channel channel = null;
 
-    @Value("${im.userId}")
-    private String userId;
-
-    @Value("${im.userName}")
-    private String userName;
-
-
-    public void start ()
+    public Channel start(String ip, int port)
     {
-        try
-        {
-            RouteInfo routeInfo = login();
-            startClient(routeInfo);
-        } catch (Exception e)
-        {
-            logger.error("start IMClient failure", e);
-        }
-    }
-
-
-    private RouteInfo login () throws Exception
-    {
-        LoginRequestVO loginRequestVO = new LoginRequestVO(userId, userName);
-        RouteInfo routeInfo = routeRequest.getIMServer(loginRequestVO);
-        String str = routeInfo.toString();
-
-        SessionHolder.INSTANCE.setServiceInfo(str);
-        SessionHolder.INSTANCE.setStartDate(new Date());
-        SessionHolder.INSTANCE.saveUserInfo(Long.parseLong(userId), userName);
-
-        logger.info("server address:{}", str);
-        return routeInfo;
-    }
-
-
-    private void startClient (RouteInfo routeInfo)
-    {
-        NioEventLoopGroup group = new NioEventLoopGroup(1);
+        NioEventLoopGroup workerGroup = new NioEventLoopGroup();
         Bootstrap bootstrap = new Bootstrap();
-        bootstrap.group(group)
+        bootstrap.group(workerGroup)
                 .channel(NioSocketChannel.class)
-                .handler(new IMClientInitializer());
-
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
+                .option(ChannelOption.SO_KEEPALIVE, true)
+                .option(ChannelOption.TCP_NODELAY, true)
+                .handler(new ChannelInitializer<SocketChannel>()
+                {
+                    @Override
+                    protected void initChannel(SocketChannel channel) throws Exception
+                    {
+                        ChannelPipeline pipeline = channel.pipeline();
+//                      pipeline.addLast("IdleStateHandler", new IdleStateHandler(11, 0, 0));
+                        pipeline.addLast("MsgDecoder", new MsgDecoder());
+                        pipeline.addLast("MsgEncoder", new MsgEncoder());
+                        pipeline.addLast("IMClientHandle", clientHandle);
+                    }
+                });
+        connect(bootstrap, ip, port, MAX_RETRY);
         try
         {
-            channelFuture = bootstrap.connect(routeInfo.getIp(), Integer.parseInt(routeInfo.getServerPort())).sync();
-
-        } catch (Exception e)
+            countDownLatch.await();
+        } catch (InterruptedException e)
         {
-            //todo 做个失败重连
-            logger.error("connect server fail", e);
+            log.error("连接服务器超时", e);
+            return null;
         }
-
-        if(channelFuture.isSuccess())
-        {
-            logger.info("IM Client start success");
-        }
+        return channel;
     }
 
+    private void connect(Bootstrap bootstrap, String host, int port, int retry)
+    {
+        bootstrap.connect(host, port).addListener(future -> {
+            if (future.isSuccess())
+            {
+                log.info(new Date() + "连接服务器成功,启动控制台线程...");
+                channel = ((ChannelFuture) future).channel();
+                countDownLatch.countDown();
+            } else if (retry == 0)
+            {
+                log.error("重连次数用完,连接服务器失败!");
+            } else
+            {
+                // 第几次重连
+                int order = (MAX_RETRY - retry) + 1;
+                // 本次重连的间隔
+                int delay = 1 << order;
+                log.info(new Date() + ": 连接失败，第" + order + "次重连……");
+                bootstrap.config().group().schedule(() -> {
+                    connect(bootstrap, host, port, retry - 1);
+                }, delay, TimeUnit.SECONDS);
+            }
+        });
+    }
 }

@@ -1,9 +1,0 @@
-com\zzh\util\SessionHolder.class
-com\zzh\config\BeanConfig.class
-com\zzh\client\IMClientInitializer.class
-com\zzh\config\AppConfig.class
-com\zzh\handler\IMClientHandle.class
-com\zzh\service\impl\RouteRequestImpl.class
-com\zzh\ClientApplication.class
-com\zzh\service\RouteRequest.class
-com\zzh\client\IMClient.class

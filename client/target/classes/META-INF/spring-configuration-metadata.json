@@ -1,0 +1,32 @@
+{
+  "groups": [
+    {
+      "name": "im",
+      "type": "com.zzh.config.UserConfig",
+      "sourceType": "com.zzh.config.UserConfig"
+    },
+    {
+      "name": "route",
+      "type": "com.zzh.config.RouteConfig",
+      "sourceType": "com.zzh.config.RouteConfig"
+    }
+  ],
+  "properties": [
+    {
+      "name": "im.name",
+      "type": "java.lang.String",
+      "sourceType": "com.zzh.config.UserConfig"
+    },
+    {
+      "name": "im.password",
+      "type": "java.lang.String",
+      "sourceType": "com.zzh.config.UserConfig"
+    },
+    {
+      "name": "route.url",
+      "type": "java.lang.String",
+      "sourceType": "com.zzh.config.RouteConfig"
+    }
+  ],
+  "hints": []
+}

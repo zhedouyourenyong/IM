@@ -1,9 +1,10 @@
 package com.zzh.service;
 
+
 /**
  * @version v1.0
  * @ProjectName: im
- * @Description: TODO(用户路由信息的相关服务)
+ * @Description: (用户路由信息的相关服务)
  * @Author: Administrator
  * @Date: 2019/12/11 14:43
  */
@@ -31,5 +32,5 @@ public interface RouteInfoService
      * @param userId
      * @throws Exception
      */
-    void removeRouteInfoByUserId(String userId) throws Exception;
+    Boolean removeRouteInfoByUserId(String userId) throws Exception;
 }

@@ -1,5 +1,7 @@
 package com.zzh.config;
 
+import org.I0Itec.zkclient.ZkClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -17,16 +19,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class BeanConfig
 {
-//    @Bean
-//    public OkHttpClient okHttpClient()
-//    {
-//        OkHttpClient.Builder builder = new OkHttpClient.Builder();
-//        builder.connectTimeout(30, TimeUnit.SECONDS)
-//                .readTimeout(10, TimeUnit.SECONDS)
-//                .writeTimeout(10, TimeUnit.SECONDS)
-//                .retryOnConnectionFailure(true);
-//        return builder.build();
-//    }
+    private ZkConfig zkConfig;
+
+    @Autowired
+    public BeanConfig(ZkConfig zkConfig)
+    {
+        this.zkConfig = zkConfig;
+    }
 
     @Bean
     public RedisTemplate<String, String> redisTemplate (RedisConnectionFactory factory)
@@ -36,5 +35,11 @@ public class BeanConfig
         redisTemplate.setValueSerializer(new StringRedisSerializer());
         redisTemplate.afterPropertiesSet();
         return redisTemplate;
+    }
+
+    @Bean
+    public ZkClient buildZKClient()
+    {
+        return new ZkClient(zkConfig.getZkAddress(), zkConfig.getSessionTimeout(), zkConfig.getConnectionTimeout());
     }
 }

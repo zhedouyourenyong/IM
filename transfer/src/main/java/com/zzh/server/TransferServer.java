@@ -1,33 +1,41 @@
 package com.zzh.server;
 
 import com.zzh.config.TransferConfig;
+import com.zzh.exception.ImException;
+import com.zzh.handler.TransferMsgHandler;
+import com.zzh.protocol.codec.MsgDecoder;
+import com.zzh.protocol.codec.MsgEncoder;
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.epoll.Epoll;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-
+/**
+ * 基于Netty实现的IM服务端
+ */
+@Slf4j
 @Component
 public class TransferServer
 {
-    public static final Logger logger = LoggerFactory.getLogger(TransferServer.class);
+    private TransferConfig transferConfig;
+    private TransferMsgHandler transferMsgHandler;
 
     @Autowired
-    private TransferConfig serverConfig;
-
-    private ServerBootstrap serverBootstrap;
-    private ChannelFuture bossChannelFuture;
+    public TransferServer(TransferConfig transferConfig, TransferMsgHandler transferMsgHandler)
+    {
+        this.transferConfig = transferConfig;
+        this.transferMsgHandler = transferMsgHandler;
+    }
 
 
     /**
@@ -37,72 +45,48 @@ public class TransferServer
      */
     public void start() throws Exception
     {
-        if (serverConfig.getServerPort() == 0)
+        if (transferConfig.getServerPort() == 0)
         {
-            logger.info("NettyServerPort not config.");
-            return;
+            throw new ImException("Netty服务端的端口没有配置.");
         }
 
-        logger.info("TransferServer is starting");
-        serverBootstrap = newServerBootStrap();
+        ServerBootstrap serverBootstrap = newServerBootStrap();
         serverBootstrap
                 .option(ChannelOption.SO_BACKLOG, 1024)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
                 .childOption(ChannelOption.TCP_NODELAY, true)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
-                .childHandler(new TransferInitializer());
-
-        bossChannelFuture = serverBootstrap.bind(serverConfig.getServerPort()).sync();
-
-        if (bossChannelFuture.isSuccess())
-        {
-            logger.info("TransferServer start successfully at port {}", serverConfig.getServerPort());
-        } else
-        {
-            throw new Exception("[TransferServer] start failed");
-        }
-
-        /**
-         * 关闭时的清理工作
-         */
-        Runtime.getRuntime().addShutdownHook(new ShutdownThread());
+                .childHandler(new ChannelInitializer<NioSocketChannel>()
+                {
+                    @Override
+                    protected void initChannel(NioSocketChannel channel) throws Exception
+                    {
+                        ChannelPipeline pipeline = channel.pipeline();
+//                      pipeline.addLast("IdleStateHandler", new IdleStateHandler(11, 0, 0));
+                        pipeline.addLast("MsgDecoder", new MsgDecoder());
+                        pipeline.addLast("MsgEncoder", new MsgEncoder());
+                        pipeline.addLast("MsgHandler", transferMsgHandler);
+                    }
+                });
+        bind(serverBootstrap, transferConfig.getServerPort());
     }
 
-
-    class ShutdownThread extends Thread
+    private void bind(ServerBootstrap bootstrap, int port)
     {
-        @Override
-        public void run()
-        {
-            close();
-        }
-    }
+        bootstrap.bind(port).addListener(future -> {
+            if (future.isSuccess())
+            {
+                log.info(new Date() + ": 端口[" + port + "]绑定成功!");
 
-    private void close()
-    {
-        if (serverBootstrap == null)
-        {
-            logger.info("TransferServer is not running!");
-            return;
-        }
-
-        logger.info("TransferServer is stopping");
-        if (bossChannelFuture != null)
-        {
-            bossChannelFuture.channel().close().awaitUninterruptibly(10, TimeUnit.SECONDS);
-            bossChannelFuture = null;
-        }
-        if (serverBootstrap != null && serverBootstrap.config().group() != null)
-        {
-            serverBootstrap.config().group().shutdownGracefully();
-        }
-        if (serverBootstrap != null && serverBootstrap.config().childGroup() != null)
-        {
-            serverBootstrap.config().childGroup().shutdownGracefully();
-        }
-        serverBootstrap = null;
-
-        logger.info("Netty server stopped");
+                /**
+                 * 关闭时的清理工作
+                 */
+                Runtime.getRuntime().addShutdownHook(new ShutdownThread(bootstrap, (ChannelFuture) future));
+            } else
+            {
+                log.info("端口[" + port + "]绑定失败!");
+            }
+        });
     }
 
 
@@ -113,10 +97,8 @@ public class TransferServer
     {
         if (Epoll.isAvailable())
         {
-            EventLoopGroup workerGroup, bossGroup;
-
-            bossGroup = new EpollEventLoopGroup();
-            workerGroup = new EpollEventLoopGroup();
+            EventLoopGroup bossGroup = new EpollEventLoopGroup();
+            EventLoopGroup workerGroup = new EpollEventLoopGroup();
 
             return new ServerBootstrap()
                     .group(bossGroup, workerGroup)
@@ -127,13 +109,52 @@ public class TransferServer
 
     private ServerBootstrap newNioServerBootstrap()
     {
-        EventLoopGroup bossGroup, workerGroup;
-        bossGroup = new NioEventLoopGroup();
-        workerGroup = new NioEventLoopGroup();
+        EventLoopGroup bossGroup = new NioEventLoopGroup();
+        EventLoopGroup workerGroup = new NioEventLoopGroup();
 
         return new ServerBootstrap()
                 .group(bossGroup, workerGroup)
                 .channel(NioServerSocketChannel.class);
     }
 
+
+    static class ShutdownThread extends Thread
+    {
+        private ServerBootstrap serverBootstrap;
+        private ChannelFuture bossChannelFuture;
+
+        public ShutdownThread(ServerBootstrap serverBootstrap, ChannelFuture bossChannelFuture)
+        {
+            this.serverBootstrap = serverBootstrap;
+            this.bossChannelFuture = bossChannelFuture;
+        }
+
+        @Override
+        public void run()
+        {
+            try
+            {
+                if (bossChannelFuture != null)
+                {
+                    bossChannelFuture.channel().close().awaitUninterruptibly(10, TimeUnit.SECONDS);
+                    bossChannelFuture = null;
+                }
+                if (serverBootstrap != null && serverBootstrap.config().group() != null)
+                {
+                    serverBootstrap.config().group().shutdownGracefully();
+                }
+                if (serverBootstrap != null && serverBootstrap.config().childGroup() != null)
+                {
+                    serverBootstrap.config().childGroup().shutdownGracefully();
+                }
+                serverBootstrap = null;
+
+                log.info("Netty server stopped");
+            } catch (Exception e)
+            {
+                log.error("ShutdownThread has error", e);
+            }
+
+        }
+    }
 }
