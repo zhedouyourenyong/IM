@@ -5,22 +5,23 @@ import com.google.protobuf.Message;
 import com.zzh.ClientApplication;
 import com.zzh.constant.Constant;
 import com.zzh.domain.ClientAckWindow;
+import com.zzh.domain.ServerAckWindow;
 import com.zzh.protocol.Ack;
 import com.zzh.protocol.Internal;
 import com.zzh.protocol.Single;
 import com.zzh.util.IdUtil;
-import com.zzh.util.SessionHolder;
+import com.zzh.util.NettyAttrUtil;
+import com.zzh.session.SessionHolder;
 import io.netty.channel.*;
-import io.netty.util.AttributeKey;
 import lombok.extern.slf4j.Slf4j;
+
+import java.time.Duration;
 
 
 @Slf4j
 @ChannelHandler.Sharable
 public class IMClientHandle extends SimpleChannelInboundHandler<Message>
 {
-    public static final AttributeKey<ClientAckWindow> CLIENT_ACK_WIN = AttributeKey.valueOf("clientAckWin");
-
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception
     {
@@ -39,7 +40,8 @@ public class IMClientHandle extends SimpleChannelInboundHandler<Message>
         ctx.channel().writeAndFlush(greet).addListener(future -> {
             if (future.isSuccess())
             {
-                ctx.channel().attr(CLIENT_ACK_WIN).set(new ClientAckWindow());
+                ctx.channel().attr(NettyAttrUtil.CLIENT_ACK_WIN).set(new ClientAckWindow());
+                ctx.channel().attr(NettyAttrUtil.SERVER_ACK_WIN).set(new ServerAckWindow(ClientApplication.CLIENT_ID, 12, Duration.ofSeconds(5)));
                 log.info("greet send success!");
             }
         });
@@ -48,14 +50,12 @@ public class IMClientHandle extends SimpleChannelInboundHandler<Message>
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Message msg) throws Exception
     {
-        log.info("receive msg:{}", msg.toString());
-
-        ClientAckWindow ackWindow = ctx.channel().attr(CLIENT_ACK_WIN).get();
+        ClientAckWindow clientAckWindow = ctx.channel().attr(NettyAttrUtil.CLIENT_ACK_WIN).get();
 
         if (msg instanceof Single.SingleMsg)
         {
             Single.SingleMsg singleMsg = (Single.SingleMsg) msg;
-            ackWindow.offer(singleMsg.getId(), singleMsg.getSessionId(), singleMsg.getFromId(), singleMsg, ctx.channel(), m -> {
+            clientAckWindow.offer(singleMsg.getId(), singleMsg.getSessionId(), singleMsg.getFromId(), singleMsg, ctx.channel(), m -> {
                 Single.SingleMsg message = (Single.SingleMsg) m;
                 System.out.println("收到来自用户:{" + message.getFromId() + "}的消息");
                 System.out.println(message.getBody());
@@ -63,8 +63,8 @@ public class IMClientHandle extends SimpleChannelInboundHandler<Message>
         } else if (msg instanceof Ack.AckMsg)
         {
             Ack.AckMsg m = (Ack.AckMsg) msg;
-            log.info("收到ACK:{}", m.toString());
-            ackWindow.remove(Long.parseLong(m.getAckMsgId()));
+            clientAckWindow.setMsgToConsumed(m.getAckMsgSessionId());
+            ServerAckWindow.ack(ClientApplication.CLIENT_ID, m);
         }
     }
 
@@ -85,5 +85,6 @@ public class IMClientHandle extends SimpleChannelInboundHandler<Message>
             return;
         }
         log.error(cause.getMessage(), cause);
+        ctx.close();
     }
 }

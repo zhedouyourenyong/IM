@@ -66,7 +66,7 @@ public class InternalMsgHandler implements MsgHandler
 
     private ServerAckWindow initServerAckWindow(ClientConnection clientConnection)
     {
-        return new ServerAckWindow(clientConnection.getClientId(), 1024, Duration.ofSeconds(5));
+        return new ServerAckWindow(clientConnection.getClientId(), 12, Duration.ofSeconds(5));
     }
 
     @Override

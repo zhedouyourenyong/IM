@@ -15,9 +15,11 @@ import java.util.Date;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 连接服务器，创建api
+ */
 
 @Slf4j
-@Component
 public class IMClient
 {
     private static final int MAX_RETRY = 5;
@@ -84,4 +86,6 @@ public class IMClient
             }
         });
     }
+
+
 }

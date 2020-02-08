@@ -1,15 +1,19 @@
 package com.zzh;
 
 import com.zzh.api.ChatApi;
-import com.zzh.api.LoginApi;
+import com.zzh.api.UserApi;
 import com.zzh.client.IMClient;
 import com.zzh.config.UserConfig;
+import com.zzh.console.ConsoleCommandManager;
 import com.zzh.exception.ImException;
 import com.zzh.pojo.RouteInfo;
 import io.netty.channel.Channel;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+
+import java.util.Scanner;
 
 
 /**
@@ -19,18 +23,19 @@ import org.springframework.stereotype.Component;
  * @Author: Administrator
  * @Date: 2020/2/1 21:57
  */
+@Slf4j
 @Component
 public class ImClientStarter implements CommandLineRunner
 {
     private IMClient imClient;
     private ChatApi chatApi;
-    private LoginApi loginApi;
+    private UserApi loginApi;
     private UserConfig userConfig;
 
     @Autowired
-    public ImClientStarter(IMClient imClient, LoginApi loginApi, UserConfig userConfig)
+    public ImClientStarter( UserApi loginApi, UserConfig userConfig)
     {
-        this.imClient = imClient;
+        this.imClient = new IMClient();
         this.loginApi = loginApi;
         this.userConfig = userConfig;
     }
@@ -47,6 +52,27 @@ public class ImClientStarter implements CommandLineRunner
         }
 
         chatApi = new ChatApi(channel);
-        chatApi.startConsoleThread();
+
+        startConsoleThread(channel);
+    }
+
+    public void startConsoleThread(Channel channel)
+    {
+        Scanner scanner = new Scanner(System.in);
+        Thread thread = new Thread(() -> {
+            ConsoleCommandManager manager = new ConsoleCommandManager();
+            while (!Thread.interrupted())
+            {
+                try
+                {
+                    manager.exec(scanner, channel);
+                } catch (Exception e)
+                {
+                    log.error("consoleThread has error!", e);
+                }
+            }
+        });
+        thread.setName("consoleThread");
+        thread.start();
     }
 }

@@ -1,9 +1,11 @@
 package com.zzh.console.command;
 
+import com.zzh.ClientApplication;
 import com.zzh.console.ConsoleCommand;
+import com.zzh.domain.ServerAckWindow;
 import com.zzh.protocol.Single;
 import com.zzh.util.IdUtil;
-import com.zzh.util.SessionHolder;
+import com.zzh.session.SessionHolder;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,7 +29,10 @@ public class SingleCommand implements ConsoleCommand
         System.out.print("内容:");
         String content = scanner.next();
 
-        channel.writeAndFlush(getSingleMsg(destId, content));
+        Single.SingleMsg msg = getSingleMsg(destId, content);
+
+        ServerAckWindow.offer(ClientApplication.CLIENT_ID, msg.getId(), msg,
+                channel::writeAndFlush);
     }
 
 

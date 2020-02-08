@@ -56,7 +56,7 @@ public class AckMsgHandler implements MsgHandler
     public void process(ChannelHandlerContext ctx, Message msg) throws Exception
     {
         Ack.AckMsg message = (Ack.AckMsg) msg;
-        log.info("receive ackMsg:{}", message.toString());
+        log.info("received ackMsg:{}", message.toString());
 
         if (message.getFromModule().equals(Ack.AckMsg.Module.TRANSFER))
         {

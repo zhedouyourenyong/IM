@@ -28,7 +28,7 @@ public class RouteInfoController
 
 
     @RequestMapping(value = "/getRouteInfoByUserId", method = RequestMethod.POST)
-     public String getRouteInfo(@RequestBody JSONObject msg)
+    public String getRouteInfo(@RequestBody JSONObject msg)
     {
         log.info("Query ServerInfo,{}->{}", msg.getString(Constant.FROM_ID), msg.getString(Constant.TO_ID));
 
@@ -42,5 +42,11 @@ public class RouteInfoController
             log.error(e.getMessage(), e);
         }
         return routeInfo;
+    }
+
+    @RequestMapping(value = "/test", method = RequestMethod.POST)
+    public String test(@RequestBody String str)
+    {
+        return "test success " + str;
     }
 }

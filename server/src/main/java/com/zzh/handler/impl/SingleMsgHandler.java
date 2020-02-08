@@ -58,6 +58,7 @@ public class SingleMsgHandler implements MsgHandler
     {
         try
         {
+            log.info("received single msg:{}", msg.toString());
             Single.SingleMsg message = (Single.SingleMsg) msg;
             if (message.getFromModule().equals(Single.SingleMsg.Module.CLIENT))
             {
@@ -100,7 +101,7 @@ public class SingleMsgHandler implements MsgHandler
     }
 
     /**
-     * 检查消息是否被消费
+     * 根据消息ID检查消息是否被消费
      *
      * @return true:已被消费   false：未被消费
      */
@@ -130,7 +131,7 @@ public class SingleMsgHandler implements MsgHandler
                 .setTimeStamp(System.currentTimeMillis())
                 .setFromModule(Ack.AckMsg.Module.SERVER)
                 .setDestId(destId)
-                .setAckMsgId(ackMsgId.toString())
+                .setAckMsgId(ackMsgId)
                 .build();
     }
 
