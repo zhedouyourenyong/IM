@@ -11,6 +11,7 @@ import java.util.function.Consumer;
 
 /**
  * 主要用于消息重推
+ *
  * @author Administrator
  */
 @Slf4j
@@ -21,12 +22,11 @@ public class ServerAckWindow
      * clientId=>ServerAckWindow
      */
     private static Map<String, ServerAckWindow> windowMap;
-    private static ExecutorService executorService;
 
     static
     {
         windowMap = new ConcurrentHashMap<>();
-        executorService = Executors.newSingleThreadExecutor();
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
         executorService.submit(ServerAckWindow::checkTimeoutAndRetry);
     }
 
@@ -57,12 +57,14 @@ public class ServerAckWindow
     {
         if (responseCollectorMap.containsKey(id))
         {
+            log.info("ServerAckWin received repeat msg,id:{}", id);
             CompletableFuture<Message> future = new CompletableFuture<>();
             future.completeExceptionally(new Exception("send repeat msg id: " + id));
             return future;
         }
         if (responseCollectorMap.size() >= maxSize)
         {
+            log.info("ServerAckWin is full");
             CompletableFuture<Message> future = new CompletableFuture<>();
             future.completeExceptionally(new Exception("server window is full"));
             return future;
@@ -83,12 +85,13 @@ public class ServerAckWindow
 
     public void ack(Ack.AckMsg message)
     {
-        long msgId = message.getId();
+        long msgId = message.getAckMsgId();
+        long sessionId = message.getAckMsgSessionId();
         if (responseCollectorMap.containsKey(msgId))
         {
             responseCollectorMap.get(msgId).getFuture().complete(message);
             responseCollectorMap.remove(msgId);
-            log.info("get ack, msg: {}", msgId);
+            log.info("cancel resend ackMsg,msgId:{},msgSessionId:{}", msgId, sessionId);
         }
     }
 
@@ -107,7 +110,6 @@ public class ServerAckWindow
                     window.responseCollectorMap.entrySet().stream()
                             .filter(entry -> window.timeout(entry.getValue()))
                             .forEach(entry -> window.retry(entry.getKey(), entry.getValue()));
-
                 }
             } catch (Exception e)
             {

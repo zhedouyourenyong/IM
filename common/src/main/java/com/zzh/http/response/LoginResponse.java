@@ -2,7 +2,6 @@ package com.zzh.http.response;
 
 import com.zzh.pojo.RouteInfo;
 import lombok.Data;
-import lombok.NonNull;
 
 /**
  * code : 9000
@@ -13,9 +12,6 @@ import lombok.NonNull;
 @Data
 public class LoginResponse
 {
-    private boolean success;
-    private String reason;
-    private String userId;
+    private Long userId;
     private RouteInfo routeInfo;
-
 }

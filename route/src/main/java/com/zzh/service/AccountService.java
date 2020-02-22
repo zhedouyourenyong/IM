@@ -1,7 +1,7 @@
 package com.zzh.service;
 
 
-import com.alibaba.fastjson.JSONObject;
+import com.zzh.enums.StatusEnum;
 
 
 public interface AccountService
@@ -14,7 +14,7 @@ public interface AccountService
      * @return
      * @throws Exception
      */
-    JSONObject register(String userName, String password) throws Exception;
+    StatusEnum register(String userName, String password) throws Exception;
 
     /**
      * 登录服务
@@ -22,8 +22,7 @@ public interface AccountService
      * @param
      * @throws Exception
      */
-    JSONObject login(String userName, String password) throws Exception;
-
+    StatusEnum login(String userName, String password) throws Exception;
 
 
     /**
@@ -33,4 +32,18 @@ public interface AccountService
      * @throws Exception
      */
     void offLine(String userId) throws Exception;
+
+    /**
+     * 根据用户名获取用户ID
+     * @param name
+     * @return
+     */
+    Long getUserIdByName(String name);
+
+    /**
+     * 在redis中建立用户名和用户ID的映射。
+     * @param name
+     * @param id
+     */
+    void setUserIdByName(String name,Long id);
 }

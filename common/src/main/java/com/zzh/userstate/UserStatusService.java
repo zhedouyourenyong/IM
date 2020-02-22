@@ -35,5 +35,4 @@ public interface UserStatusService
      * @throws Exception
      */
     Long removeUserLoginStatus(String userId) throws Exception;
-
 }

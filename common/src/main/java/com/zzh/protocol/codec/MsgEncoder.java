@@ -20,23 +20,23 @@ import lombok.extern.slf4j.Slf4j;
 public class MsgEncoder extends MessageToByteEncoder<Message>
 {
     @Override
-    protected void encode(ChannelHandlerContext ctx, Message message, ByteBuf out) throws Exception
+    protected void encode(ChannelHandlerContext ctx, Message message, ByteBuf out)
     {
         try
         {
-            byte[] bytes=message.toByteArray();
-            int code= MsgTypeEnum.getByClass(message.getClass()).getCode();
-            int length=bytes.length;
+            byte[] bytes = message.toByteArray();
+            int code = MsgTypeEnum.getByClass(message.getClass()).getCode();
+            int length = bytes.length;
 
-            ByteBuf buf= Unpooled.directBuffer(8+length);
+            ByteBuf buf = Unpooled.directBuffer(8 + length);
             buf.writeInt(length);
             buf.writeInt(code);
             buf.writeBytes(bytes);
 
             out.writeBytes(buf);
-        }catch (Exception e)
+        } catch (Exception e)
         {
-            log.error("msg encoder has error!",e);
+            log.error("消息编码失败", e);
         }
     }
 }

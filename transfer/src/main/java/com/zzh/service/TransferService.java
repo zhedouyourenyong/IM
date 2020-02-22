@@ -9,7 +9,7 @@ import com.zzh.pojo.RouteInfo;
 import com.zzh.protocol.Ack;
 import com.zzh.protocol.Internal;
 import com.zzh.protocol.Single;
-import com.zzh.util.IdUtil;
+import com.zzh.util.NettyAttrUtil;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,19 +29,28 @@ import java.io.IOException;
 @Service
 public class TransferService
 {
-    @Autowired
     private ServerTransferConnContext context;
-    @Autowired
     private StringRedisTemplate redisTemplate;
+
+    @Autowired
+    public TransferService(ServerTransferConnContext context, StringRedisTemplate redisTemplate)
+    {
+        this.context = context;
+        this.redisTemplate = redisTemplate;
+    }
 
 
     public void doChat(Single.SingleMsg msg) throws IOException
     {
         ServerTransferConn conn = getConnection(msg.getDestId());
 
+        Single.SingleMsg copy = Single.SingleMsg.newBuilder().mergeFrom(msg)
+                .setFromModule(Single.SingleMsg.Module.TRANSFER)
+                .build();
+
         if (conn != null)
         {
-            conn.getCtx().writeAndFlush(msg);
+            conn.getCtx().writeAndFlush(copy);
         } else
         {
             doOffline(msg);
@@ -51,6 +60,10 @@ public class TransferService
     public void doSendAck(Ack.AckMsg msg) throws IOException
     {
         ServerTransferConn conn = getConnection(msg.getDestId());
+
+        Ack.AckMsg copy = Ack.AckMsg.newBuilder().mergeFrom(msg)
+                .setFromModule(Ack.AckMsg.Module.TRANSFER)
+                .build();
 
         if (conn != null)
         {
@@ -64,10 +77,11 @@ public class TransferService
     public void doGreet(Internal.InternalMsg msg, ChannelHandlerContext ctx)
     {
         String serverId = msg.getBody();
+        ctx.channel().attr(NettyAttrUtil.SERVER_ID).set(serverId);
         ServerTransferConn conn = new ServerTransferConn(serverId, ctx);
         context.addConnection(conn);
 
-        log.info("serverId:{} 上线!",serverId);
+        log.info("serverId:{} 上线!", serverId);
 
         //todo greet 回应
 //        ctx.writeAndFlush(getInternalAck(msg.getId()));
@@ -96,5 +110,4 @@ public class TransferService
 //        producer.basicPublish(ImConstant.MQ_EXCHANGE, ImConstant.MQ_ROUTING_KEY,
 //                MessageProperties.PERSISTENT_TEXT_PLAIN, msg);
     }
-
 }

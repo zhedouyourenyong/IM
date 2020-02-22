@@ -48,6 +48,7 @@ public class AckMsgHandler implements MsgHandler
      * <p>
      * 发送消息:client1 <-->  server   <--> client2
      * 发送ACK:client2 <-->  server   <--> client1
+     *
      * @param ctx
      * @param msg
      * @throws Exception
@@ -58,37 +59,49 @@ public class AckMsgHandler implements MsgHandler
         Ack.AckMsg message = (Ack.AckMsg) msg;
         log.info("received ackMsg:{}", message.toString());
 
-        if (message.getFromModule().equals(Ack.AckMsg.Module.TRANSFER))
+        if (message.getFromModule() == Ack.AckMsg.Module.TRANSFER)
         {
-            doSendAck(message);
-        } else if (message.getFromModule().equals(Ack.AckMsg.Module.CLIENT))
+            sendAckToClient(message);
+        } else if (message.getFromModule() == Ack.AckMsg.Module.CLIENT)
         {
+            cancelMsgRePush(message);
             setMsgToConsumed(message);
-            msgTransferService.sendAckMsgToClientOrTransfer(message);
+            sendAckToClientOrTransfer(message);
         }
     }
 
+    private void sendAckToClient(Ack.AckMsg msg)
+    {
+        msgTransferService.sendAckToClient(msg);
+    }
+
     /**
-     * 取消重传并将消息Id添加到redis
-     *
-     * @param msg
+     * msg:from->server->to
+     * ack:to->server->from
+     * server要取消对to的重推
+     * 然后将消息发送给from
      */
+    private void cancelMsgRePush(Ack.AckMsg msg)
+    {
+        //获取to的id
+        ClientConnection conn = connContext.getClientConnectionByUserId(msg.getFromId());
+        ServerAckWindow.ack(conn.getClientId(), msg);
+    }
+
     private void setMsgToConsumed(Ack.AckMsg msg)
     {
         try
         {
-            ClientConnection conn = connContext.getClientConnectionByUserId(msg.getDestId());
-            ServerAckWindow.ack(conn.getClientId(), msg);
-
             String key = RedisKey.CONSUMED_MESSAGE + IMServerApplication.SERVER_ID;
-            redisTemplate.opsForSet().add(key, String.valueOf(msg.getId()));
+            redisTemplate.opsForSet().add(key, String.valueOf(msg.getAckMsgId()));
+            log.info("add msgId：{} to redis consumed set", msg.getAckMsgId());
         } catch (Exception e)
         {
             log.error(e.getMessage(), e);
         }
     }
 
-    private void doSendAck(Ack.AckMsg msg)
+    private void sendAckToClientOrTransfer(Ack.AckMsg msg)
     {
         msgTransferService.sendAckMsgToClientOrTransfer(msg);
     }

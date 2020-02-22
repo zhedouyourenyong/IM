@@ -21,7 +21,7 @@ import java.util.List;
 public class MsgDecoder extends ByteToMessageDecoder
 {
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> list) throws Exception
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> list)
     {
         in.markReaderIndex();
 
@@ -30,7 +30,6 @@ public class MsgDecoder extends ByteToMessageDecoder
             in.resetReaderIndex();
             return;
         }
-
         int length = in.readInt();
         if (length < 0)
         {
@@ -38,18 +37,15 @@ public class MsgDecoder extends ByteToMessageDecoder
             log.error("[IM msg decoder]message length less than 0, channel closed");
             return;
         }
-
         if (length > in.readableBytes() - 4)
         {
             in.resetReaderIndex();
             return;
         }
-
         int code = in.readInt();
         ByteBuf byteBuf = Unpooled.buffer(length);
         in.readBytes(byteBuf);
         byte[] body = byteBuf.array();
-
         try
         {
             Message message = ParseService.INSTANCE.getMsgByCode(code, body);

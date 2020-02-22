@@ -17,8 +17,13 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 public class BeanConfig
 {
+    private RouteConfig routeConfig;
+
     @Autowired
-    RouteConfig routeConfig;
+    public BeanConfig(RouteConfig routeConfig)
+    {
+        this.routeConfig = routeConfig;
+    }
 
     @Bean
     public ZkClient buildZKClient ()

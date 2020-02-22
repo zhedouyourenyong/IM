@@ -1,0 +1,13 @@
+com\zzh\util\HttpUtil.class
+com\zzh\core\ChatApi.class
+com\zzh\core\ClientMsgListener.class
+com\zzh\ImClientStarterAutoConfiguration$1.class
+com\zzh\config\ClientConfig.class
+com\zzh\core\IMClient$1.class
+com\zzh\MyClient.class
+META-INF\spring-configuration-metadata.json
+com\zzh\core\IMClient.class
+com\zzh\ImClientStarterAutoConfiguration.class
+com\zzh\session\Session.class
+com\zzh\handler\IMClientHandle.class
+com\zzh\core\UserApi.class

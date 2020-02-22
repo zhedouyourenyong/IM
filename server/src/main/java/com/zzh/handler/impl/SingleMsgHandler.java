@@ -60,16 +60,16 @@ public class SingleMsgHandler implements MsgHandler
         {
             log.info("received single msg:{}", msg.toString());
             Single.SingleMsg message = (Single.SingleMsg) msg;
-            if (message.getFromModule().equals(Single.SingleMsg.Module.CLIENT))
+            if (message.getFromModule() == Single.SingleMsg.Module.CLIENT)
             {
                 if (connContext.onThisMachine(message.getDestId()))
                 {
                     sendMsgToClient(ctx.channel(), message);
                 } else
                 {
-                    msgTransferService.sendSingleMsgToClientOrTransfer(message);
+                    sendMsgToTransfer(message);
                 }
-            } else if (message.getFromModule().equals(Single.SingleMsg.Module.TRANSFER))
+            } else if (message.getFromModule() == Single.SingleMsg.Module.TRANSFER)
             {
                 sendMsgToClient(ctx.channel(), message);
             }
@@ -80,8 +80,15 @@ public class SingleMsgHandler implements MsgHandler
         }
     }
 
+    private void sendMsgToTransfer(Single.SingleMsg msg)
+    {
+        msgTransferService.sendMsgToTransfer(msg);
+    }
+
     /**
      * todo 通过AOP做幂等性检查
+     * 首先要检查该消息是否已经发送过ack，如果已经发送过但又再次收到同一个消息，说明ack丢失，重发ack。
+     * 之后由ServerAckWin会判断该消息是否正在处理，并作出解决。
      */
     private void sendMsgToClient(Channel channel, Single.SingleMsg msg)
     {
@@ -89,10 +96,11 @@ public class SingleMsgHandler implements MsgHandler
         {
             if (checkMsgConsumeStatus(String.valueOf(msg.getId())))
             {
+                log.info("received repeat msg,msgId:{}", msg.getId());
                 doSendAck(channel, msg);
             } else
             {
-                msgTransferService.sendSingleMsgToClientOrTransfer(msg);
+                msgTransferService.sendSingleMsgToClient(msg);
             }
         } catch (Exception e)
         {
@@ -118,20 +126,27 @@ public class SingleMsgHandler implements MsgHandler
 
     private void doSendAck(Channel channel, Single.SingleMsg msg)
     {
-        if (channel.isActive() && channel.isWritable())
+        if (channel.isOpen() && channel.isActive() && channel.isWritable())
         {
-            channel.writeAndFlush(getAck(msg.getId(), msg.getFromId()));
+            channel.writeAndFlush(getAck(msg.getDestId(), msg.getFromId(), msg.getId(), msg.getSessionId())).addListener(future -> {
+                if (future.isSuccess())
+                {
+                    log.info("repeat msg resend ack success,msgId:{},sessionId:{}", msg.getId(), msg.getSessionId());
+                }
+            });
         }
     }
 
-    private Ack.AckMsg getAck(Long ackMsgId, String destId)
+    private Ack.AckMsg getAck(String fromId, String destId, Long ackMsgId, Long ackMsgSessionId)
     {
         return Ack.AckMsg.newBuilder()
                 .setId(IdUtil.snowGenId())
                 .setTimeStamp(System.currentTimeMillis())
                 .setFromModule(Ack.AckMsg.Module.SERVER)
+                .setFromId(fromId)
                 .setDestId(destId)
                 .setAckMsgId(ackMsgId)
+                .setAckMsgSessionId(ackMsgSessionId)
                 .build();
     }
 

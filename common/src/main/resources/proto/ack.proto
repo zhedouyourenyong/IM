@@ -16,12 +16,15 @@ message AckMsg {
 
     Module fromModule = 3;
 
-    //接收者userId,
+    //此消息接收方的ID
     string destId = 4;
 
     //目标消息ID
     int64 ackMsgId = 5;
     int64 ackMsgSessionId = 6;
+
+    //此消息发送方的id
+    string fromId=7;
 
     enum Module {
         CLIENT = 0;

@@ -14,7 +14,6 @@ public interface Constant
     String ITd = "tid";
     String FROM_ID = "fromId";
     String TO_ID = "toId";
-    String SUCCESS = "success";
     String MESSAGE = "message";
     String CLIENT_ID="clientId";
 }

@@ -28,39 +28,101 @@ public class MsgTransferService
         this.connContext = connContext;
     }
 
-    public void sendSingleMsgToClientOrTransfer(Single.SingleMsg msg)
+    public void sendSingleMsgToClient(Single.SingleMsg msg)
     {
-        sendMsg(msg.getId(), msg.getDestId(), msg);
+        if (connContext.onThisMachine(msg.getDestId()))
+        {
+            ClientConnection destConn = connContext.getClientConnectionByUserId(msg.getDestId());
+            ServerAckWindow.offer(destConn.getClientId(), msg.getId(), msg, message -> {
+                Channel channel = destConn.getCtx().channel();
+                if (channel.isActive() && channel.isWritable())
+                {
+                    channel.writeAndFlush(message).addListener(future -> {
+                        if (future.isSuccess())
+                        {
+                            log.info("send msg to client success,msg:{}", msg.toString());
+                        }
+                    });
+                }
+            });
+        }
+    }
+
+    public void sendAckToClient(Ack.AckMsg msg)
+    {
+        if (connContext.onThisMachine(msg.getDestId()))
+        {
+            ClientConnection destConn = connContext.getClientConnectionByUserId(msg.getDestId());
+            destConn.getCtx().writeAndFlush(msg).addListener(future -> {
+                if (future.isSuccess())
+                {
+                    log.info("send ack to client,msg:{}", msg.toString());
+                }
+            });
+        }
     }
 
     public void sendAckMsgToClientOrTransfer(Ack.AckMsg msg)
     {
-        sendMsg(msg.getId(), msg.getDestId(), msg);
-    }
-
-
-    public boolean sendMsg(Long msgId, String destId, Message msg)
-    {
-        ClientConnection destConn = connContext.getClientConnectionByUserId(destId);
-        if (destConn == null)
+        if (connContext.onThisMachine(msg.getDestId()))
         {
-            ChannelHandlerContext ctx = ServerTransferHandler.getOneOfTransferCtx(System.currentTimeMillis());
-            Channel channel = ctx.channel();
-            if (channel.isActive() && channel.isWritable())
-            {
-                channel.writeAndFlush(msg);
-            }
-            return false;
+            sendAckToClient(msg);
         } else
         {
-            ServerAckWindow.offer(destConn.getClientId(), msgId, msg, message -> {
-                Channel channel = destConn.getCtx().channel();
-                if (channel.isActive() && channel.isWritable())
-                {
-                    channel.writeAndFlush(message);
-                }
-            });
-            return true;
+            sendMsgToTransfer(msg);
         }
     }
+
+    public void sendMsgToTransfer(Message msg)
+    {
+        ChannelHandlerContext ctx = ServerTransferHandler.getOneOfTransferCtx(System.currentTimeMillis());
+        Channel channel = ctx.channel();
+        if (channel.isActive() && channel.isWritable())
+        {
+            channel.writeAndFlush(msg).addListener(future -> {
+                if (future.isSuccess())
+                {
+                    log.info("send msg to transfer success,msg:{}", msg.toString());
+                }
+            });
+        }
+    }
+
+
+//    public boolean sendMsg(Long msgId, String destId, Message msg)
+//    {
+//        ClientConnection destConn = connContext.getClientConnectionByUserId(destId);
+//        if (destConn == null)
+//        {
+//            ChannelHandlerContext ctx = ServerTransferHandler.getOneOfTransferCtx(System.currentTimeMillis());
+//            Channel channel = ctx.channel();
+//            if (channel.isActive() && channel.isWritable())
+//            {
+//                channel.writeAndFlush(msg).addListener(future -> {
+//                    if (future.isSuccess())
+//                    {
+//                        log.info("send msg to transfer success,msg:{}", msg.toString());
+//                    }
+//                });
+//            }
+//            return false;
+//        } else
+//        {
+//            ServerAckWindow.offer(destConn.getClientId(), msgId, msg, message -> {
+//                Channel channel = destConn.getCtx().channel();
+//                if (channel.isActive() && channel.isWritable())
+//                {
+//                    channel.writeAndFlush(message).addListener(future -> {
+//                        if (future.isSuccess())
+//                        {
+//                            log.info("send msg to client success,msg:{}", msg.toString());
+//                        }
+//                    });
+//                }
+//            });
+//            return true;
+//        }
+//    }
+
+
 }

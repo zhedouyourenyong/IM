@@ -32,7 +32,6 @@ public class MessageHandler extends SimpleChannelInboundHandler<Message>
     @Autowired
     public MessageHandler(MsgHandlerFactory handlerFactory, UserOffLineService userOffLineService)
     {
-
         this.handlerFactory = handlerFactory;
         this.userOffLineService = userOffLineService;
     }

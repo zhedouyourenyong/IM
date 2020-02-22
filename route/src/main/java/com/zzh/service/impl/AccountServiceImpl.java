@@ -2,7 +2,8 @@ package com.zzh.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
 
-import com.zzh.constant.Constant;
+import com.zzh.constant.RedisKey;
+import com.zzh.enums.StatusEnum;
 import com.zzh.pojo.User;
 import com.zzh.mapper.UserDao;
 import com.zzh.service.AccountService;
@@ -13,7 +14,10 @@ import com.zzh.util.IdUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -23,71 +27,60 @@ public class AccountServiceImpl implements AccountService
     private UserDao userDao;
     private RouteInfoService routeInfoService;
     private UserInfoService userInfoService;
+    private StringRedisTemplate redisTemplate;
 
     @Autowired
-    public AccountServiceImpl(UserStatusService userStatusService, UserDao userDao, RouteInfoService routeInfoService, UserInfoService userInfoService)
+    public AccountServiceImpl(UserStatusService userStatusService, UserDao userDao, RouteInfoService routeInfoService, UserInfoService userInfoService, StringRedisTemplate redisTemplate)
     {
         this.userStatusService = userStatusService;
         this.userDao = userDao;
         this.routeInfoService = routeInfoService;
         this.userInfoService = userInfoService;
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
-    public JSONObject register(String userName, String password)
+    public StatusEnum register(String userName, String password)
     {
         JSONObject resp = new JSONObject();
         if (StringUtils.isBlank(userName))
         {
-            resp.put(Constant.SUCCESS, -1);
-            resp.put(Constant.MESSAGE, "用户名不能为空");
-            return resp;
+            return StatusEnum.NAME_IS_NULL;
         }
         if (StringUtils.isBlank(password))
         {
-            resp.put(Constant.SUCCESS, -1);
-            resp.put(Constant.MESSAGE, "密码不能为空");
-            return resp;
+            return StatusEnum.PASSWORD_IS_NULL;
         }
         User user = userDao.selectByName(userName);
         if (user != null)
         {
-            resp.put(Constant.SUCCESS, -1);
-            resp.put(Constant.MESSAGE, "用户名已经被注册");
-            return resp;
+            return StatusEnum.NAME_REPEAT;
         }
 
         userDao.addUser(IdUtil.uuid(), userName, password);
-        resp.put(Constant.SUCCESS, 0);
-
-        return resp;
+        return StatusEnum.SUCCESS;
     }
 
 
     /**
      * 检验成功后，将用户登录状态和用户信息保存在redis总，并返回userId.
+     *
      * @param userName
      * @param password
      * @return
      * @throws Exception
      */
     @Override
-    public JSONObject login(String userName, String password) throws Exception
+    public StatusEnum login(String userName, String password) throws Exception
     {
-        JSONObject resp = new JSONObject();
-
         if (StringUtils.isBlank(userName))
         {
-            resp.put(Constant.SUCCESS, false);
-            resp.put(Constant.MESSAGE, "用户名不能为空");
-            return resp;
+            return StatusEnum.NAME_IS_NULL;
         }
 
         if (StringUtils.isBlank(password))
         {
-            resp.put(Constant.SUCCESS, false);
-            resp.put(Constant.MESSAGE, "密码不能为空");
-            return resp;
+            return StatusEnum.PASSWORD_IS_NULL;
         }
 
         /**
@@ -96,16 +89,12 @@ public class AccountServiceImpl implements AccountService
         User userInfo = userDao.selectByName(userName);
         if (userInfo == null)
         {
-            resp.put(Constant.SUCCESS, false);
-            resp.put(Constant.MESSAGE, "用户名不存在");
-            return resp;
+            return StatusEnum.NAME_NOT_EXIST;
         }
 
         if (!userInfo.getPassword().equals(password))
         {
-            resp.put(Constant.SUCCESS, false);
-            resp.put(Constant.MESSAGE, "密码错误");
-            return resp;
+            return StatusEnum.PASSWORD_ERROR;
         }
 
         /**
@@ -114,20 +103,43 @@ public class AccountServiceImpl implements AccountService
         boolean repeatLogin = userStatusService.checkUserLoginStatus(userInfo.getUserId());
         if (repeatLogin)
         {
-            resp.put(Constant.SUCCESS, false);
-            resp.put(Constant.MESSAGE, "重复登录");
-            return resp;
+            return StatusEnum.LOGIN_REPEAT;
         }
 
         /**
          * 登录成功后存储用户登录状态和用户信息
          */
+        setUserIdByName(userName, Long.parseLong(userInfo.getUserId()));
+
         userStatusService.saveUserLoginStatus(userInfo.getUserId());
         userInfoService.saveUserInfo(userInfo);
 
-        resp.put(Constant.SUCCESS, true);
-        resp.put(Constant.USER_ID, userInfo.getUserId());
-        return resp;
+        return StatusEnum.SUCCESS;
+    }
+
+    @Override
+    public Long getUserIdByName(String name)
+    {
+        try
+        {
+            return Long.parseLong(Objects.requireNonNull(redisTemplate.opsForValue().get(RedisKey.NAME_MAP_ID + name)));
+        } catch (Exception e)
+        {
+            log.error(e.getMessage());
+        }
+        return null;
+    }
+
+    @Override
+    public void setUserIdByName(String name, Long id)
+    {
+        try
+        {
+            redisTemplate.opsForValue().set(RedisKey.NAME_MAP_ID + name, String.valueOf(id));
+        } catch (Exception e)
+        {
+            log.error(e.getMessage());
+        }
     }
 
     /**

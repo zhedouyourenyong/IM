@@ -47,7 +47,7 @@ public final class Ack {
 
     /**
      * <pre>
-     *接收者userId,
+     *此消息接收方的ID
      * </pre>
      *
      * <code>string destId = 4;</code>
@@ -55,7 +55,7 @@ public final class Ack {
     java.lang.String getDestId();
     /**
      * <pre>
-     *接收者userId,
+     *此消息接收方的ID
      * </pre>
      *
      * <code>string destId = 4;</code>
@@ -76,6 +76,24 @@ public final class Ack {
      * <code>int64 ackMsgSessionId = 6;</code>
      */
     long getAckMsgSessionId();
+
+    /**
+     * <pre>
+     *此消息发送方的id
+     * </pre>
+     *
+     * <code>string fromId = 7;</code>
+     */
+    java.lang.String getFromId();
+    /**
+     * <pre>
+     *此消息发送方的id
+     * </pre>
+     *
+     * <code>string fromId = 7;</code>
+     */
+    com.google.protobuf.ByteString
+        getFromIdBytes();
   }
   /**
    * <pre>
@@ -97,6 +115,7 @@ public final class Ack {
     private AckMsg() {
       fromModule_ = 0;
       destId_ = "";
+      fromId_ = "";
     }
 
     @java.lang.Override
@@ -153,6 +172,12 @@ public final class Ack {
             case 48: {
 
               ackMsgSessionId_ = input.readInt64();
+              break;
+            }
+            case 58: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              fromId_ = s;
               break;
             }
             default: {
@@ -341,7 +366,7 @@ public final class Ack {
     private volatile java.lang.Object destId_;
     /**
      * <pre>
-     *接收者userId,
+     *此消息接收方的ID
      * </pre>
      *
      * <code>string destId = 4;</code>
@@ -360,7 +385,7 @@ public final class Ack {
     }
     /**
      * <pre>
-     *接收者userId,
+     *此消息接收方的ID
      * </pre>
      *
      * <code>string destId = 4;</code>
@@ -401,6 +426,48 @@ public final class Ack {
       return ackMsgSessionId_;
     }
 
+    public static final int FROMID_FIELD_NUMBER = 7;
+    private volatile java.lang.Object fromId_;
+    /**
+     * <pre>
+     *此消息发送方的id
+     * </pre>
+     *
+     * <code>string fromId = 7;</code>
+     */
+    public java.lang.String getFromId() {
+      java.lang.Object ref = fromId_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        fromId_ = s;
+        return s;
+      }
+    }
+    /**
+     * <pre>
+     *此消息发送方的id
+     * </pre>
+     *
+     * <code>string fromId = 7;</code>
+     */
+    public com.google.protobuf.ByteString
+        getFromIdBytes() {
+      java.lang.Object ref = fromId_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        fromId_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -432,6 +499,9 @@ public final class Ack {
       }
       if (ackMsgSessionId_ != 0L) {
         output.writeInt64(6, ackMsgSessionId_);
+      }
+      if (!getFromIdBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 7, fromId_);
       }
       unknownFields.writeTo(output);
     }
@@ -465,6 +535,9 @@ public final class Ack {
         size += com.google.protobuf.CodedOutputStream
           .computeInt64Size(6, ackMsgSessionId_);
       }
+      if (!getFromIdBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(7, fromId_);
+      }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
@@ -491,6 +564,8 @@ public final class Ack {
           != other.getAckMsgId()) return false;
       if (getAckMsgSessionId()
           != other.getAckMsgSessionId()) return false;
+      if (!getFromId()
+          .equals(other.getFromId())) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
@@ -518,6 +593,8 @@ public final class Ack {
       hash = (37 * hash) + ACKMSGSESSIONID_FIELD_NUMBER;
       hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
           getAckMsgSessionId());
+      hash = (37 * hash) + FROMID_FIELD_NUMBER;
+      hash = (53 * hash) + getFromId().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -668,6 +745,8 @@ public final class Ack {
 
         ackMsgSessionId_ = 0L;
 
+        fromId_ = "";
+
         return this;
       }
 
@@ -700,6 +779,7 @@ public final class Ack {
         result.destId_ = destId_;
         result.ackMsgId_ = ackMsgId_;
         result.ackMsgSessionId_ = ackMsgSessionId_;
+        result.fromId_ = fromId_;
         onBuilt();
         return result;
       }
@@ -766,6 +846,10 @@ public final class Ack {
         }
         if (other.getAckMsgSessionId() != 0L) {
           setAckMsgSessionId(other.getAckMsgSessionId());
+        }
+        if (!other.getFromId().isEmpty()) {
+          fromId_ = other.fromId_;
+          onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -920,7 +1004,7 @@ public final class Ack {
       private java.lang.Object destId_ = "";
       /**
        * <pre>
-       *接收者userId,
+       *此消息接收方的ID
        * </pre>
        *
        * <code>string destId = 4;</code>
@@ -939,7 +1023,7 @@ public final class Ack {
       }
       /**
        * <pre>
-       *接收者userId,
+       *此消息接收方的ID
        * </pre>
        *
        * <code>string destId = 4;</code>
@@ -959,7 +1043,7 @@ public final class Ack {
       }
       /**
        * <pre>
-       *接收者userId,
+       *此消息接收方的ID
        * </pre>
        *
        * <code>string destId = 4;</code>
@@ -976,7 +1060,7 @@ public final class Ack {
       }
       /**
        * <pre>
-       *接收者userId,
+       *此消息接收方的ID
        * </pre>
        *
        * <code>string destId = 4;</code>
@@ -989,7 +1073,7 @@ public final class Ack {
       }
       /**
        * <pre>
-       *接收者userId,
+       *此消息接收方的ID
        * </pre>
        *
        * <code>string destId = 4;</code>
@@ -1069,6 +1153,95 @@ public final class Ack {
         onChanged();
         return this;
       }
+
+      private java.lang.Object fromId_ = "";
+      /**
+       * <pre>
+       *此消息发送方的id
+       * </pre>
+       *
+       * <code>string fromId = 7;</code>
+       */
+      public java.lang.String getFromId() {
+        java.lang.Object ref = fromId_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          fromId_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <pre>
+       *此消息发送方的id
+       * </pre>
+       *
+       * <code>string fromId = 7;</code>
+       */
+      public com.google.protobuf.ByteString
+          getFromIdBytes() {
+        java.lang.Object ref = fromId_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          fromId_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <pre>
+       *此消息发送方的id
+       * </pre>
+       *
+       * <code>string fromId = 7;</code>
+       */
+      public Builder setFromId(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        fromId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *此消息发送方的id
+       * </pre>
+       *
+       * <code>string fromId = 7;</code>
+       */
+      public Builder clearFromId() {
+        
+        fromId_ = getDefaultInstance().getFromId();
+        onChanged();
+        return this;
+      }
+      /**
+       * <pre>
+       *此消息发送方的id
+       * </pre>
+       *
+       * <code>string fromId = 7;</code>
+       */
+      public Builder setFromIdBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        fromId_ = value;
+        onChanged();
+        return this;
+      }
       @java.lang.Override
       public final Builder setUnknownFields(
           final com.google.protobuf.UnknownFieldSet unknownFields) {
@@ -1136,13 +1309,13 @@ public final class Ack {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\tack.proto\022\020com.zzh.protocol\"\307\001\n\006AckMsg" +
+      "\n\tack.proto\022\020com.zzh.protocol\"\327\001\n\006AckMsg" +
       "\022\n\n\002id\030\001 \001(\003\022\021\n\ttimeStamp\030\002 \001(\003\0223\n\nfromM" +
       "odule\030\003 \001(\0162\037.com.zzh.protocol.AckMsg.Mo" +
       "dule\022\016\n\006destId\030\004 \001(\t\022\020\n\010ackMsgId\030\005 \001(\003\022\027" +
-      "\n\017ackMsgSessionId\030\006 \001(\003\".\n\006Module\022\n\n\006CLI" +
-      "ENT\020\000\022\n\n\006SERVER\020\001\022\014\n\010TRANSFER\020\002B\005B\003Ackb\006" +
-      "proto3"
+      "\n\017ackMsgSessionId\030\006 \001(\003\022\016\n\006fromId\030\007 \001(\t\"" +
+      ".\n\006Module\022\n\n\006CLIENT\020\000\022\n\n\006SERVER\020\001\022\014\n\010TRA" +
+      "NSFER\020\002B\005B\003Ackb\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -1161,7 +1334,7 @@ public final class Ack {
     internal_static_com_zzh_protocol_AckMsg_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_com_zzh_protocol_AckMsg_descriptor,
-        new java.lang.String[] { "Id", "TimeStamp", "FromModule", "DestId", "AckMsgId", "AckMsgSessionId", });
+        new java.lang.String[] { "Id", "TimeStamp", "FromModule", "DestId", "AckMsgId", "AckMsgSessionId", "FromId", });
   }
 
   // @@protoc_insertion_point(outer_class_scope)

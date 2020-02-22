@@ -6,44 +6,14 @@ import java.util.List;
 
 public enum StatusEnum
 {
-    /**
-     * 成功
-     */
-    SUCCESS("9000", "成功"),
-    /**
-     * 成功
-     */
-    FALLBACK("8000", "FALL_BACK"),
-    /**
-     * 参数校验失败
-     **/
-    VALIDATION_FAIL("3000", "参数校验失败"),
-    /**
-     * 失败
-     */
-    FAIL("4000", "失败"),
-
-    /**
-     * 重复登录
-     */
-    REPEAT_LOGIN("5000", "账号重复登录，请退出一个账号！"),
-
-    REPEAT_REGISTRY("6000","用户名已被注册"),
-
-    /**
-     * 账号不在线
-     */
-    OFF_LINE("7000", "你选择的账号不在线，请重新选择！"),
-
-    /**
-     * 登录信息不匹配
-     */
-    ACCOUNT_NOT_MATCH("9100", "登录信息不匹配！"),
-
-    /**
-     * 请求限流
-     */
-    REQUEST_LIMIT("6000", "请求限流");
+    SUCCESS("0","成功"),
+    NAME_IS_NULL("-1","用户名为空"),
+    NAME_REPEAT("-2","用户名已被注册"),
+    PASSWORD_IS_NULL("-3","密码为空"),
+    PASSWORD_ERROR("-4","密码错误"),
+    NAME_NOT_EXIST("-5","用户名不存在"),
+    LOGIN_REPEAT("-6","重复登录"),
+    ;
 
     private String code;
     private String message;

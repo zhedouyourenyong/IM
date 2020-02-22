@@ -24,7 +24,7 @@
     <modules>
         <module>server</module>
         <module>common</module>
-        <module>client</module>
+        <module>client-sample</module>
         <module>route</module>
         <module>transfer</module>
     </modules>
@@ -119,10 +119,12 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.projectlombok/lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <optional>true</optional>
+            <version>1.18.10</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>

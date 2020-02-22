@@ -11,6 +11,13 @@
 
     <artifactId>route</artifactId>
 
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.version>1.8</java.version>
+        <docker.repostory>registry.cn-hangzhou.aliyuncs.com</docker.repostory>
+        <docker.registry.name>zzh96</docker.registry.name>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -42,11 +49,32 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <!--命名可执行jar名字，默认可执行Jar包与普通jar命名相同，前者会将后者覆盖，可执行Jar不能够被其他模块引用-->
-<!--                <configuration>-->
-<!--                    <classifier>exec</classifier>-->
-<!--                </configuration>-->
             </plugin>
+
+<!--            <plugin>-->
+<!--                <groupId>com.spotify</groupId>-->
+<!--                <artifactId>dockerfile-maven-plugin</artifactId>-->
+<!--                <version>1.4.10</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>default</id>-->
+<!--                        <goals>-->
+<!--                            &lt;!&ndash;如果package时不想用docker打包,就注释掉这个goal&ndash;&gt;-->
+<!--                            <goal>build</goal>-->
+<!--                            <goal>push</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--                <configuration>-->
+<!--                    <repository>${docker.repostory}/${project.artifactId}</repository>-->
+<!--                    <tag>${project.version}</tag>-->
+<!--                    <buildArgs>-->
+<!--                        &lt;!&ndash;提供参数向Dockerfile传递&ndash;&gt;-->
+<!--                        <JAR_FILE>target/${project.build.finalName}.jar</JAR_FILE>-->
+<!--                    </buildArgs>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
+
         </plugins>
     </build>
 

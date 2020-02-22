@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 /**
  * @version v1.0
  * @ProjectName: im
- * @Description:  客户端使用，主要用于消息去重，保证有序
+ * @Description: 客户端使用，主要用于消息去重，保证有序
  * @Author: Administrator
  * @Date: 2020/1/30 22:19
  */
@@ -45,17 +45,17 @@ public class ClientAckWindow
         notContinuousMap = new ConcurrentHashMap<>();
     }
 
-    public CompletableFuture<Void> offer(Long msgId, Long sessionId, String fromId, Message receivedMsg, Channel channel, Consumer<Message> processFunction)
+    public CompletableFuture<Void> offer(Long msgId, Long sessionId, String fromId, String destId, Message receivedMsg, Channel channel, Consumer<Message> processFunction)
     {
         if (isRepeat(sessionId))
         {
-            channel.writeAndFlush(getAck(fromId, sessionId));
+            channel.writeAndFlush(getAck(fromId, msgId, sessionId));
             CompletableFuture<Void> future = new CompletableFuture<>();
             future.complete(null);
             return future;
         }
 
-        ProcessMsgNode msgNode = new ProcessMsgNode(msgId, sessionId, fromId, receivedMsg, channel, processFunction);
+        ProcessMsgNode msgNode = new ProcessMsgNode(msgId, sessionId, fromId, destId, receivedMsg, channel, processFunction);
 
         if (!isContinuous(sessionId))
         {
@@ -71,22 +71,22 @@ public class ClientAckWindow
         return processAsync(msgNode);
     }
 
-    public void setMsgToConsumed(Long sessionId)
+    public void removeMsgFromNotContinueMap(Long sessionId)
     {
-        notContinuousMap.remove(sessionId);
+        if (notContinuousMap.containsKey(sessionId))
+        {
+            notContinuousMap.remove(sessionId);
+            log.info("removeMsgFromNotContinueMap,sessionId:{}", sessionId);
+        }
     }
 
     private CompletableFuture<Void> processAsync(ProcessMsgNode node)
     {
         return CompletableFuture.runAsync(node::process)
                 .thenAccept(v -> {
-                    node.sendAck();
-                    node.complete();
-                })
-                .thenAccept(v -> {
                     lastId.set(node.getSessionId());
-                    setMsgToConsumed(node.getSessionId());
-                    log.info("sessionId更新为:{},消息:{}已消费", lastId.get(), node.getSessionId());
+                    log.info("sessionId update to:{}", lastId.get());
+                    removeMsgFromNotContinueMap(node.getSessionId());
                 })
                 .thenComposeAsync(v -> {
                     Long nextId = nextId(node.getSessionId());
@@ -127,13 +127,14 @@ public class ClientAckWindow
         return msgId + 1;
     }
 
-    public Ack.AckMsg getAck(String fromId, Long sessionId)
+    public Ack.AckMsg getAck(String fromId, Long msgId, Long sessionId)
     {
         return Ack.AckMsg.newBuilder()
                 .setId(IdUtil.snowGenId())
                 .setTimeStamp(System.currentTimeMillis())
                 .setFromModule(Ack.AckMsg.Module.CLIENT)
-                .setAckMsgId(sessionId)
+                .setAckMsgId(msgId)
+                .setAckMsgSessionId(sessionId)
                 .setDestId(fromId)
                 .build();
     }

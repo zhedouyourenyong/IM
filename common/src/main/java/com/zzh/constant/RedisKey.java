@@ -27,10 +27,12 @@ public interface RedisKey
     /**
      * 检查幂等性
      */
-    String CONSUMED_MESSAGE="consumed-message";
+    String CONSUMED_MESSAGE = "consumed-message";
 
     /**
      * token
      */
-    String TOKEN_PREFIX="token:";
+    String TOKEN_PREFIX = "token:";
+
+    String NAME_MAP_ID = "name-map-id:";
 }

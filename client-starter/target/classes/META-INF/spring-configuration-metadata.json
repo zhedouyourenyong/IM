@@ -1,0 +1,28 @@
+{
+  "hints": [],
+  "groups": [
+    {
+      "sourceType": "com.zzh.config.ClientConfig",
+      "name": "im",
+      "type": "com.zzh.config.ClientConfig"
+    }
+  ],
+  "properties": [
+    {
+      "sourceType": "com.zzh.config.ClientConfig",
+      "name": "im.name",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "com.zzh.config.ClientConfig",
+      "name": "im.password",
+      "type": "java.lang.String"
+    },
+    {
+      "sourceType": "com.zzh.config.ClientConfig",
+      "defaultValue": "http:\/\/112.74.62.176:8091\/login",
+      "name": "im.route-url",
+      "type": "java.lang.String"
+    }
+  ]
+}
